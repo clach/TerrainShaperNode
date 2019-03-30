@@ -1,0 +1,17 @@
+global proc Create_TerrainShaper_Node() 
+{
+    createNode transform -n TerrainShaper1;
+    createNode mesh -n TerrainShaperMesh1 -p TerrainShaper1;
+    sets -add initialShadingGroup TerrainShaperMesh1;
+    createNode TerrainShaperNode -n TerrainShaperNode1;
+    connectAttr time1.outTime TerrainShaperNode1.time;
+    connectAttr TerrainShaperNode1.outputMesh TerrainShaperMesh1.inMesh;
+}
+
+//if (menu -exists MayaWindow)
+//{
+//	deleteUI MayaWindow;
+//}
+
+menu -label "TerrainShaper" -p MayaWindow;
+    menuItem -label "TerrainShaper Node" -c "Create_TerrainShaper_Node";
