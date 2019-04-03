@@ -136,7 +136,7 @@ Image Graph::run()
 	
 	// run modified Dijkstra's
 	shortestPath(startCoords);
-	/*
+	
 	// convert grid to height map (Image) representation
 	// TODO: this is kind of ugly
 	Image heightMap = Image();
@@ -160,7 +160,7 @@ Image Graph::run()
 			vec3 pixelColor = vec3(heightRemapped, heightRemapped, heightRemapped);
 			heightMap[x][y] = pixelColor;
 		}
-	}*/
+	}
 
 	for (int x = 0; x < xDim; x++)
 	{
@@ -171,8 +171,8 @@ Image Graph::run()
 		}
 	}
 
-	//return heightMap;
-	return Image();
+	return heightMap;
+	//return Image();
 }
 
 void Graph::setDetailMaps(std::vector<Image> detailMaps) {

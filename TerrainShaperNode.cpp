@@ -6,6 +6,8 @@
 		return MS::kFailure;		\
 	}
 
+using namespace cimg_library;
+
 TerrainShaperNode::TerrainShaperNode()
 {
 }
@@ -14,7 +16,7 @@ TerrainShaperNode::TerrainShaperNode()
 MObject TerrainShaperNode::time;
 MObject TerrainShaperNode::detailMap;
 MObject TerrainShaperNode::startPoints;
-MObject TerrainShaperNode::outputMesh;
+MObject TerrainShaperNode::outMesh;
 MTypeId TerrainShaperNode::id(0x80000);
 // TODO: more input MObjects
 
@@ -43,7 +45,7 @@ MStatus TerrainShaperNode::initialize()
 	TerrainShaperNode::startPoints = inputStartPointsAttr.create("startPoints", "sp", MFnData::kString, 0);
 	McheckErr(returnStatus, "ERROR creating LSystemNode startPoints attribute\n");
 
-	TerrainShaperNode::outputMesh = outputGeometryAttr.create("outputMesh", "out", MFnData::kMesh, &returnStatus);
+	TerrainShaperNode::outMesh = outputGeometryAttr.create("outMesh", "out", MFnData::kMesh, &returnStatus);
 	McheckErr(returnStatus, "ERROR creating LSystemNode output attribute\n");
 
 	// TODO: add attributes
@@ -56,17 +58,17 @@ MStatus TerrainShaperNode::initialize()
 	returnStatus = addAttribute(TerrainShaperNode::startPoints);
 	McheckErr(returnStatus, "ERROR adding start points attribute\n");
 
-	returnStatus = addAttribute(TerrainShaperNode::outputMesh);
+	returnStatus = addAttribute(TerrainShaperNode::outMesh);
 	McheckErr(returnStatus, "ERROR adding output attribute\n");
 
 	// TODO: attribute effects
-	returnStatus = attributeAffects(TerrainShaperNode::time, TerrainShaperNode::outputMesh);
+	returnStatus = attributeAffects(TerrainShaperNode::time, TerrainShaperNode::outMesh);
 	McheckErr(returnStatus, "ERROR in attributeAffects for time\n");
 
-	returnStatus = attributeAffects(TerrainShaperNode::detailMap, TerrainShaperNode::outputMesh);
+	returnStatus = attributeAffects(TerrainShaperNode::detailMap, TerrainShaperNode::outMesh);
 	McheckErr(returnStatus, "ERROR in attributeAffects for detail map\n");
 
-	returnStatus = attributeAffects(TerrainShaperNode::startPoints, TerrainShaperNode::outputMesh);
+	returnStatus = attributeAffects(TerrainShaperNode::startPoints, TerrainShaperNode::outMesh);
 	McheckErr(returnStatus, "ERROR in attributeAffects for start point\n");
 
 	return MS::kSuccess;
@@ -76,7 +78,7 @@ MStatus TerrainShaperNode::compute(const MPlug & plug, MDataBlock & data)
 {
 	MStatus returnStatus;
 
-	if (plug == outputMesh) {
+	if (plug == outMesh) {
 
 		// TODO: get input 
 
@@ -100,7 +102,7 @@ MStatus TerrainShaperNode::compute(const MPlug & plug, MDataBlock & data)
 		MString startPointsFilename = startPointsData.asString();
 
 		// get output geometry //////
-		MDataHandle outputHandle = data.outputValue(outputMesh, &returnStatus);
+		MDataHandle outputHandle = data.outputValue(outMesh, &returnStatus);
 		McheckErr(returnStatus, "ERROR getting polygon data handle\n");
 
 		MFnMeshData dataCreator;
@@ -113,28 +115,33 @@ MStatus TerrainShaperNode::compute(const MPlug & plug, MDataBlock & data)
 		std::vector<Point> startPoints;
 		Image heightMap = runAlgorithm(detailMaps, startPoints);
 
-		MImage image;
-		image.create(10, 10, 3);
-		
-		unsigned char* pixels = image.pixels();
+		//cv::Mat image(512, 512, CV_8UC3, cv::Scalar(0, 255, 0));
+		//cv::imwrite("../CVTest.jpg", image);
 
-		unsigned int x, y;
-		for (y = 0; y < 10; ++y)
+		CImg<unsigned char> testImage(512, 512, 1, 3, 0);
+
+		//float color[] = { 255.0,0.0,0.0 };
+		cimg_forXY(testImage, x, y) {
+			vec3 c = heightMap[x][y];
+			float const color[] = { c[0], c[1], c[2] };
+			testImage.draw_point(x, y, color);
+		}
+
+		for (int x = 0; x < 512; x++)
 		{
-			for (x = 0; x < 10; ++x)
+			for (int y = 0; y < 512; y++)
 			{
-				*pixels++ = 1;
-				*pixels++ = 0;
-				*pixels++ = 0;
+				vec3 c = heightMap[x][y];
+				float const color[] = { c[0], c[1], c[2] };
+				testImage.draw_point(x, y, color);
 			}
 		}
-		image.setPixels(pixels, 10, 10);
+		testImage.save("C:\\Users\\caroline\\Documents\\CIS_660_windows\\CImg_Test.bmp");
 
-		image.writeToFile(MString("C:\\Users\\caroline\\Documents\\CIS_660_windows\\imageTest.iff"));
 
 		// TODO: use heightMap to make terrain
 
-
+		MGlobal::executeCommand(MString("test();"));
 
 		outputHandle.set(newOutputData);
 		data.setClean(plug);

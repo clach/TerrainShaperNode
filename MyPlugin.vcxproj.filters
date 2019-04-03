@@ -35,5 +35,8 @@
     <ClInclude Include="Graph.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="CImg.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -12,6 +12,8 @@
 #include <maya/MImage.h>
 #include "Graph.h"
 
+//#include "opencv2\highgui\highgui.hpp"
+
 class TerrainShaperNode : public MPxNode
 {
 public:
@@ -27,7 +29,7 @@ public:
 	static MObject	time;
 	static MObject detailMap;
 	static MObject startPoints;
-	static MObject	outputMesh;
+	static MObject	outMesh;
 
 	Image runAlgorithm(std::vector<Image> inDetailMaps, std::vector<Point> inStartPoints);
 

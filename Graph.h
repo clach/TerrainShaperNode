@@ -7,6 +7,8 @@
 #include <queue>
 #include <vec.h>
 
+#include "CImg.h"
+
 class Node
 {
 public:

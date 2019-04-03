@@ -38,6 +38,9 @@ MStatus initializePlugin(MObject obj)
 	MGlobal::executeCommand(menuCmd, true);
 
 
+	MString global_proc = "source \"" + plugin.loadPath() + "/TextureDeformerTest\";";
+	MGlobal::executeCommand(global_proc, true);
+
 
 	return status;
 }

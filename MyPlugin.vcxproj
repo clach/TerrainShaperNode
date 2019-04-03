@@ -396,6 +396,7 @@
     <ClCompile Include="vec.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="CImg.h" />
     <ClInclude Include="Graph.h" />
     <ClInclude Include="matrix.h" />
     <ClInclude Include="TerrainShaperNode.h" />

@@ -1,5 +1,10 @@
 ﻿C:\Program Files (x86)\MSBuild\Microsoft.Cpp\v4.0\V140\Microsoft.CppBuild.targets(392,5): warning MSB8028: The intermediate directory (x64\Debug\) contains files shared from another project (LSystemMaya.vcxproj).  This can lead to incorrect clean and rebuild behavior.
+  PluginMain.cpp
   TerrainShaperNode.cpp
-C:\Program Files (x86)\MSBuild\Microsoft.Cpp\v4.0\V140\Microsoft.CppBuild.targets(1189,5): warning MSB8012: TargetPath(C:\Users\caroline\Documents\CIS_660_windows\TerrainShaper\x64\Debug\TerrainShaper.mll) does not match the Linker's OutputFile property value (C:\Users\caroline\Documents\CIS_660_windows\TerrainShaper\TerrainShaper.mll). This may cause your project to build incorrectly. To correct this, please make sure that $(OutDir), $(TargetName) and $(TargetExt) property values match the value specified in %(Link.OutputFile).
-  MyPlugin.vcxproj -> C:\Users\caroline\Documents\CIS_660_windows\TerrainShaper\x64\Debug\TerrainShaper.mll
+TerrainShaperNode.cpp(126): warning C4838: conversion from 'double' to 'const float' requires a narrowing conversion
+TerrainShaperNode.cpp(135): warning C4838: conversion from 'double' to 'const float' requires a narrowing conversion
+  Generating Code...
+C:\Program Files (x86)\MSBuild\Microsoft.Cpp\v4.0\V140\Microsoft.CppBuild.targets(1189,5): warning MSB8012: TargetPath(C:\Users\caroline\Documents\CIS_660_windows\TerrainShaperNode\x64\Debug\TerrainShaper.mll) does not match the Linker's OutputFile property value (C:\Users\caroline\Documents\CIS_660_windows\TerrainShaperNode\TerrainShaper.mll). This may cause your project to build incorrectly. To correct this, please make sure that $(OutDir), $(TargetName) and $(TargetExt) property values match the value specified in %(Link.OutputFile).
+     Creating library .\Debug/MyPlugin.lib and object .\Debug/MyPlugin.exp
+  MyPlugin.vcxproj -> C:\Users\caroline\Documents\CIS_660_windows\TerrainShaperNode\x64\Debug\TerrainShaper.mll
   MyPlugin.vcxproj -> .\Debug/MyPlugin.pdb (Full PDB)
