@@ -9,10 +9,15 @@
 
 #include "CImg.h"
 
+using namespace cimg_library;
+
+typedef CImg<unsigned char> Image;
+typedef std::pair<int, int> Point;
+
 class Node
 {
 public:
-	Node(int x, int y) : processed(false), coords(std::pair<int, int>(x, y)), height(0) {}
+	Node(int x, int y) : processed(false), coords(Point(x, y)), height(0) {}
 	Node(const Node& n) : processed(n.processed), coords(n.coords), height(n.height) {}
 
 	//operator=
@@ -22,9 +27,6 @@ public:
 	float height;
 
 };
-
-typedef std::vector<std::vector<vec3>> Image;
-typedef std::pair<int, int> Point;
 
 class Graph
 {
@@ -53,8 +55,8 @@ public:
 
 	Image run(); // return height map produced by algorithm
 
-	void setDetailMaps(std::vector<Image> detailMaps);
-	void setStartPoints(std::vector<Point> startPoints);
+	void setDetailMaps(std::vector<std::string> detailMapsFilenames);
+	void setStartPoints(std::string startPointsFilenames);
 
 
 };

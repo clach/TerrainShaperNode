@@ -31,7 +31,7 @@ public:
 	static MObject startPoints;
 	static MObject	outMesh;
 
-	Image runAlgorithm(std::vector<Image> inDetailMaps, std::vector<Point> inStartPoints);
+	Image runAlgorithm(std::vector<std::string> inDetailMapFilenames, std::string inStartPointsFilenames);
 
 protected:
 	

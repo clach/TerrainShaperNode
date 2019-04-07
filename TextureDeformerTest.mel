@@ -1,39 +1,3 @@
 global proc test() {
-    CreatePolygonPlane;
-    polyPlane -w 128 -h 128 -sx 40 -sy 40 -ax 0 1 0 -cuv 2 -ch 1;
     
-    textureDeformer -envelope 1 -strength 15 -offset 0 -vectorStrength 1 1 1 -vectorOffset 0 0 0 -vectorSpace "Object" -direction "Handle" -pointSpace "UV" -exclusive "";
-    
-    defaultNavigation -createNew -destination "textureDeformer1.texture";
-    createRenderNode -allWithTexturesUp "defaultNavigation -force true -connectToExisting -source %node -destination textureDeformer1.texture" "";
-    defaultNavigation -defaultTraversal -destination "textureDeformer1.texture";
-    shadingNode -asTexture -isColorManaged file;
-    
-    shadingNode -asUtility place2dTexture;
-    
-    connectAttr -f place2dTexture1.coverage file1.coverage;
-    connectAttr -f place2dTexture1.translateFrame file1.translateFrame;
-    connectAttr -f place2dTexture1.rotateFrame file1.rotateFrame;
-    connectAttr -f place2dTexture1.mirrorU file1.mirrorU;
-    connectAttr -f place2dTexture1.mirrorV file1.mirrorV;
-    connectAttr -f place2dTexture1.stagger file1.stagger;
-    connectAttr -f place2dTexture1.wrapU file1.wrapU;
-    connectAttr -f place2dTexture1.wrapV file1.wrapV;
-    connectAttr -f place2dTexture1.repeatUV file1.repeatUV;
-    connectAttr -f place2dTexture1.offset file1.offset;
-    connectAttr -f place2dTexture1.rotateUV file1.rotateUV;
-    connectAttr -f place2dTexture1.noiseUV file1.noiseUV;
-    connectAttr -f place2dTexture1.vertexUvOne file1.vertexUvOne;
-    connectAttr -f place2dTexture1.vertexUvTwo file1.vertexUvTwo;
-    connectAttr -f place2dTexture1.vertexUvThree file1.vertexUvThree;
-    connectAttr -f place2dTexture1.vertexCameraOne file1.vertexCameraOne;
-    connectAttr place2dTexture1.outUV file1.uv;
-    connectAttr place2dTexture1.outUvFilterSize file1.uvFilterSize;
-        
-    defaultNavigation -force true -connectToExisting -source file1 -destination textureDeformer1.texture;
-    
-    setAttr -force true -type "string" file1.fileTextureName "sourceimages/CImg_Test.bmp";
-
-    //window -e -vis false createRenderNodeWindow;
-    connectAttr -force file1.outColor textureDeformer1.texture;
 };

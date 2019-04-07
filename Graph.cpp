@@ -1,6 +1,8 @@
 #include "graph.h"
 
-Graph::Graph(int x, int y) : xDim(x), yDim(y), maxHeight(1000), detailMaps(std::vector<std::vector<std::vector<vec3>>>()), 
+#include <deque>
+
+Graph::Graph(int x, int y) : xDim(x), yDim(y), maxHeight(1000), detailMaps(std::vector<Image>()), 
 startPoints(std::vector<std::pair<int, int>>())
 {}
 
@@ -23,8 +25,10 @@ float Graph::weightFunctionWithMaps(int x, int y)
 		float heightSum = 0;
 		for (int i = 0; i < detailMaps.size(); i++)
 		{
-			vec3 color = detailMaps[i][x][y];
-			heightSum += 0.21 * color[0] + 0.72 * color[1] + 0.07 * color[2];
+			int r = (int)(detailMaps[i])(x, y, 0, 0);
+			int g = (int)(detailMaps[i])(x, y, 0, 1);
+			int b = (int)(detailMaps[i])(x, y, 0, 2);
+			heightSum += 0.21 * r + 0.72 * g + 0.07 * b;
 		}
 
 		float avgHeight = (weightFunction() / 500) * heightSum / detailMaps.size();
@@ -49,6 +53,7 @@ struct nodeCompare
 void Graph::shortestPath(std::vector<std::pair<int, int>> startCoords)
 {
 	std::priority_queue<Node*, std::vector<Node*>, nodeCompare> queue;
+	//std::vector<float> dist(xDim * yDim, INFINITY);
 	
 	// push back start coordinates
 	for (int i = 0; i < startCoords.size(); i++)
@@ -58,6 +63,8 @@ void Graph::shortestPath(std::vector<std::pair<int, int>> startCoords)
 		float height = maxHeight / 2.f + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / (maxHeight - maxHeight / 2.f)));
 		n->height = height;
 		queue.push(n);
+
+		//dist[startCoords[i].first * startCoords[i].second] = height;
 	}
 
 	while (!queue.empty())
@@ -85,11 +92,14 @@ void Graph::shortestPath(std::vector<std::pair<int, int>> startCoords)
 					if (!neighbor->processed)
 					{
 						// calculate "edge weight" d dynamically
-						float d = weightFunctionWithMaps(x, y); // TODO: update this w/ real weight fxn
-						if (neighbor->height < n->height - d)
+						float weight = weightFunctionWithMaps(x, y); // TODO: update this w/ real weight fxn
+
+						if (neighbor->height < n->height - weight)
 						{
-							neighbor->height = n->height - d;
+							neighbor->height = n->height - weight;
 							Node* newNeighbor = new Node(*neighbor);
+							//Node* newNeighbor = new Node(neighbor->coords.first, neighbor->coords.second);
+							//newNeighbor->height = neighbor->height;
 							queue.push(newNeighbor);
 						}
 					}
@@ -97,6 +107,9 @@ void Graph::shortestPath(std::vector<std::pair<int, int>> startCoords)
 			}
 		}
 	}
+
+
+	return;
 }
 
 
@@ -132,33 +145,39 @@ Image Graph::run()
 			startCoords.push_back(coords);
 		}
 	}
-
 	
 	// run modified Dijkstra's
 	shortestPath(startCoords);
 	
 	// convert grid to height map (Image) representation
 	// TODO: this is kind of ugly
-	Image heightMap = Image();
-	for (int x = 0; x < xDim; x++)
-	{
-		std::vector<vec3> heightMapY;
-		for (int y = 0; y < yDim; y++)
-		{
-			heightMapY.push_back(vec3(0, 0, 0));
-		}
-		heightMap.push_back(heightMapY);
-	}
+	Image heightMap(xDim, yDim, 1, 3, 0);
+	//heightMap.fill(0);
 
 	for (int x = 0; x < xDim; x++)
 	{
 		for (int y = 0; y < yDim; y++)
 		{
 			Node* n = nodes[x][y];
+
+			// add some random value to avoid completely flat regions
+			float lo = -10;
+			float hi = 10;
+			float randVal = lo + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / (hi - lo)));
+
 			// remap height value from (0, maxHeight) to (0, 255)
-			float heightRemapped = n->height * (255.f / maxHeight);
-			vec3 pixelColor = vec3(heightRemapped, heightRemapped, heightRemapped);
-			heightMap[x][y] = pixelColor;
+			float heightRemapped = (n->height + randVal) * (255.f / maxHeight);
+
+			// TODO: replace with clamp function
+			if (heightRemapped > 255) {
+				heightRemapped = 255;
+			}
+			if (heightRemapped < 0) {
+				heightRemapped = 0;
+			}
+
+			const float color[] = { heightRemapped, heightRemapped, heightRemapped };
+			heightMap.draw_point(x, y, color);
 		}
 	}
 
@@ -172,14 +191,36 @@ Image Graph::run()
 	}
 
 	return heightMap;
-	//return Image();
 }
 
-void Graph::setDetailMaps(std::vector<Image> detailMaps) {
-	this->detailMaps = detailMaps;
+void Graph::setDetailMaps(std::vector<std::string> detailMapsFilenames) {
+	for (int i = 0; i < detailMapsFilenames.size(); i++) 
+	{
+		if (detailMapsFilenames[i] != "") {
+			const char* detailMapFilename = (detailMapsFilenames[i]).c_str();
+			CImg<unsigned char> detailMap(detailMapFilename);
+			detailMap.save("C:\\Users\\caroline\\Documents\\CIS_660_windows\\CImg_detailMapLoadTest.bmp");
+
+			this->detailMaps.push_back(detailMap);
+		}
+	}
 }
 
-void Graph::setStartPoints(std::vector<Point> startPoints) {
-	this->startPoints = startPoints;
+void Graph::setStartPoints(std::string startPointsFilename)
+{
+	if (startPointsFilename != "") {
+		const char* startPointsFilenameChar = startPointsFilename.c_str();
+		CImg<unsigned char> startPointsImage(startPointsFilenameChar);
+		startPointsImage.save("C:\\Users\\caroline\\Documents\\CIS_660_windows\\CImg_startPointsLoadTest.bmp");
+
+		cimg_forXY(startPointsImage, x, y) {
+			int r = (int)startPointsImage(x, y, 0, 0);
+			int g = (int)startPointsImage(x, y, 0, 1);
+			int b = (int)startPointsImage(x, y, 0, 2);
+			if (r == 0 && b == 0 && g == 0) {
+				startPoints.push_back(std::pair<int, int>(x, y));
+			}
+		}
+	}
 }
 

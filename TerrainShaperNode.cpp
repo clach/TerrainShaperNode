@@ -92,10 +92,6 @@ MStatus TerrainShaperNode::compute(const MPlug & plug, MDataBlock & data)
 		McheckErr(returnStatus, "ERROR getting detail map data handle\n");
 		MString detailMapFilename = detailMapData.asString();
 
-		//MImage detailMap = MImage();
-		//detailMap.readFromFile(detailMapFilename);
-
-
 		// get start points
 		MDataHandle startPointsData = data.inputValue(startPoints, &returnStatus);
 		McheckErr(returnStatus, "ERROR getting start points data handle\n");
@@ -111,32 +107,11 @@ MStatus TerrainShaperNode::compute(const MPlug & plug, MDataBlock & data)
 
 		// TODO: create new output data
 
-		std::vector<Image> detailMaps;
-		std::vector<Point> startPoints;
-		Image heightMap = runAlgorithm(detailMaps, startPoints);
+		std::vector<std::string> detailMaps;
+		detailMaps.push_back(detailMapFilename.asChar());
+		Image heightMap = runAlgorithm(detailMaps, startPointsFilename.asChar());
 
-		//cv::Mat image(512, 512, CV_8UC3, cv::Scalar(0, 255, 0));
-		//cv::imwrite("../CVTest.jpg", image);
-
-		CImg<unsigned char> testImage(512, 512, 1, 3, 0);
-
-		//float color[] = { 255.0,0.0,0.0 };
-		cimg_forXY(testImage, x, y) {
-			vec3 c = heightMap[x][y];
-			float const color[] = { c[0], c[1], c[2] };
-			testImage.draw_point(x, y, color);
-		}
-
-		for (int x = 0; x < 512; x++)
-		{
-			for (int y = 0; y < 512; y++)
-			{
-				vec3 c = heightMap[x][y];
-				float const color[] = { c[0], c[1], c[2] };
-				testImage.draw_point(x, y, color);
-			}
-		}
-		testImage.save("C:\\Users\\caroline\\Documents\\CIS_660_windows\\CImg_Test.bmp");
+		heightMap.save("C:\\Users\\caroline\\Documents\\CIS_660_windows\\CImg_Test.bmp");
 
 
 		// TODO: use heightMap to make terrain
@@ -154,11 +129,11 @@ MStatus TerrainShaperNode::compute(const MPlug & plug, MDataBlock & data)
 }
 
 
-Image TerrainShaperNode::runAlgorithm(std::vector<Image> inDetailMaps, std::vector<Point> inStartPoints) {
+Image TerrainShaperNode::runAlgorithm(std::vector<std::string> inDetailMapFilenames, std::string inStartPointsFilenames) {
 	// run algorithm and display height map
 	Graph g = Graph(512, 512);
-	g.setDetailMaps(inDetailMaps);
-	g.setStartPoints(inStartPoints);
+	g.setDetailMaps(inDetailMapFilenames);
+	g.setStartPoints(inStartPointsFilenames);
 	Image heightMap = g.run();
 
 	//Image heightMap = Image();
