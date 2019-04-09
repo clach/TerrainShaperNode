@@ -25,8 +25,7 @@ public:
 
 	static MTypeId	id;
 
-	// TODO: more input here
-	static MObject	time;
+	// node input and output
 	static MObject detailMap;
 	static MObject startPoints;
 	static MObject	outMesh;

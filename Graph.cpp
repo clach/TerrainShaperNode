@@ -42,37 +42,39 @@ float Graph::weightFunctionWithMaps(int x, int y)
 
 }
 
-
 // sorts nodes by height, from tallest to shortest heights
-struct nodeCompare
+struct NodeCompare
 {
 	bool operator()(const Node* n1, const Node* n2) const
 	{
 		return n1->height < n2->height;
-		//return dist[n1->coords.first * n1->coords.second] < dist[n2->coords.first * n2->coords.second];
 	}
 };
-
-bool Graph::Compare(Node* n1, Node* n2) {
-	//return dist[n1->coords.first * n1->coords.second] < dist[n2->coords.first * n2->coords.second];'
-	return false;
-}
-
-
-
 
 std::vector<std::vector<float>> Graph::shortestPath(std::vector<Point> startCoords)
 {
 	// make array of size xDim * yDim with all values initialized to 0
-	std::vector<float> yHeights(yDim, 0);
-	std::vector<std::vector<float>> heights(xDim, yHeights);
+	std::vector<float> heightsInner(yDim, 0);
+	std::vector<std::vector<float>> heights(xDim, heightsInner);
 
-	std::priority_queue<Node*, std::vector<Node*>, nodeCompare> queue;
+	std::priority_queue<Node*, std::vector<Node*>, NodeCompare> queue;
+
+	// create grid representation of nodes
+	for (int x = 0; x < xDim; x++)
+	{
+		std::vector<Node*> nodesInner;
+		for (int y = 0; y < yDim; y++)
+		{
+			Node* n = new Node(x, y);
+			nodesInner.push_back(n);
+		}
+		nodes.push_back(nodesInner);
+	}
 
 	// push back start coordinates
 	for (int i = 0; i < startCoords.size(); i++)
 	{
-		Node* n = nodes[startCoords[i].first][startCoords[i].second];
+		Node* n = new Node(*(nodes[startCoords[i].first][startCoords[i].second]));
 		// assign some height between maxHeight/2 and maxHeight
 		float height = maxHeight / 2.f + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / (maxHeight - maxHeight / 2.f)));
 		n->height = height;
@@ -105,28 +107,20 @@ std::vector<std::vector<float>> Graph::shortestPath(std::vector<Point> startCoor
 					
 					if (!neighbor->processed)
 					{
-						// calculate "edge weight" d dynamically
-						float weight = weightFunctionWithMaps(x, y); // TODO: update this w/ real weight fxn
-
 						float neighborHeight = heights[neighbor->coords.first][neighbor->coords.second];
 						float nHeight = heights[n->coords.first][n->coords.second];
 
-						//if (neighbor->height < n->height - weight)
+						// calculate "edge weight" d dynamically
+						float weight = weightFunctionWithMaps(x, y); // TODO: update this w/ real weight fxn
+
 						if (neighborHeight < nHeight - weight)
 						{
-							//neighbor->height = n->height - weight;
 							neighborHeight = nHeight - weight;
 							heights[neighbor->coords.first][neighbor->coords.second] = neighborHeight;
 
-							//Node* newNeighbor = new Node(*neighbor);
-							//Node* newNeighbor = new Node(neighbor->coords.first, neighbor->coords.second);
-							//newNeighbor->height = neighbor->height;
-							Node* newNeighbor = new Node(*neighbor);
-							newNeighbor->height = neighborHeight;
-							queue.push(newNeighbor);
-
-
-							//queue.push(neighbor);
+							Node* neighborCopy = new Node(*neighbor);
+							neighborCopy->height = neighborHeight;
+							queue.push(neighborCopy);
 						}
 					}
 				}
@@ -135,6 +129,15 @@ std::vector<std::vector<float>> Graph::shortestPath(std::vector<Point> startCoor
 	}
 
 
+	for (int x = 0; x < xDim; x++)
+	{
+		for (int y = 0; y < yDim; y++)
+		{
+			Node* n = nodes[x][y];
+			delete n;
+		}
+	}
+
 	return heights;
 }
 
@@ -142,20 +145,6 @@ std::vector<std::vector<float>> Graph::shortestPath(std::vector<Point> startCoor
 Image Graph::run()
 {
 	//srand(time(NULL));
-
-	// create grid representation of nodes
-	
-	for (int x = 0; x < xDim; x++)
-	{
-		std::vector<Node*> nodesInner;
-		for (int y = 0; y < yDim; y++)
-		{
-			Node* n = new Node(x, y);
-			nodesInner.push_back(n);
-		}
-		nodes.push_back(nodesInner);
-	}
-
 	
 	std::vector<Point> startCoords;
 	if (!startPoints.empty()) {
@@ -164,7 +153,7 @@ Image Graph::run()
 	else {
 		// push back a number of random starting points
 
-		int numStartCoords = 2; // TODO: better way of determining this number
+		int numStartCoords = 10; // TODO: better way of determining this number
 		for (int i = 0; i < numStartCoords; i++)
 		{
 			Point coords = Point(rand() % xDim, rand() % yDim);
@@ -179,42 +168,28 @@ Image Graph::run()
 	Image heightMap(xDim, yDim, 1, 3, 0);
 	heightMap.fill(0);
 
-	for (int x = 0; x < xDim; x++)
-	{
-		for (int y = 0; y < yDim; y++)
-		{
-			//Node* n = nodes[x][y];
-			float height = heights[x][y];
+	cimg_forXY(heightMap, x, y) {
+		float height = heights[x][y];
 
-			// add some random value to avoid completely flat regions
-			//float lo = -10;
-			//float hi = 10;
-			//float randVal = lo + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / (hi - lo)));
-			float randVal = 0;
+		// add some random value to avoid completely flat regions
+		float lo = -10;
+		float hi = 10;
+		float randVal = lo + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / (hi - lo)));
+		//float randVal = 0;
 
-			// remap height value from (0, maxHeight) to (0, 255)
-			float heightRemapped = (height + randVal) * (255.f / maxHeight);
+		// remap height value from (0, maxHeight) to (0, 255)
+		float heightRemapped = (height + randVal) * (255.f / maxHeight);
 
-			// TODO: replace with clamp function
-			if (heightRemapped > 255) {
-				heightRemapped = 255;
-			}
-			if (heightRemapped < 0) {
-				heightRemapped = 0;
-			}
-
-			const float color[] = { heightRemapped, heightRemapped, heightRemapped };
-			heightMap.draw_point(x, y, color);
+		// TODO: replace with clamp function
+		if (heightRemapped > 255) {
+			heightRemapped = 255;
 		}
-	}
-
-	for (int x = 0; x < xDim; x++)
-	{
-		for (int y = 0; y < yDim; y++)
-		{
-			Node* n = nodes[x][y];
-			delete n;
+		if (heightRemapped < 0) {
+			heightRemapped = 0;
 		}
+
+		const float color[] = { heightRemapped, heightRemapped, heightRemapped };
+		heightMap.draw_point(x, y, color);
 	}
 
 	return heightMap;

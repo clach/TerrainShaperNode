@@ -59,15 +59,9 @@ protected:
 	int xDim;
 	int yDim;
 
-	//std::vector<float> dist;// (xDim * yDim, INFINITY);
-	bool Compare(Node* n1, Node* n2);
-
 	// maximum height of any grid coordinate
 	// (all start coords will have max height)
 	float maxHeight;
-
-	friend class NodeCompareClass;
-
 
 public:
 	Graph(int x, int y); // takes in grid dimensions

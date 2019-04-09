@@ -13,12 +13,10 @@ TerrainShaperNode::TerrainShaperNode()
 }
 
 
-MObject TerrainShaperNode::time;
 MObject TerrainShaperNode::detailMap;
 MObject TerrainShaperNode::startPoints;
 MObject TerrainShaperNode::outMesh;
 MTypeId TerrainShaperNode::id(0x80000);
-// TODO: more input MObjects
 
 void* TerrainShaperNode::creator()
 {
@@ -27,18 +25,13 @@ void* TerrainShaperNode::creator()
 
 MStatus TerrainShaperNode::initialize()
 {
-	// TODO: more input attrs
-	MFnUnitAttribute inputTimeAttr;
 	MFnTypedAttribute inputDetailMapAttr;
 	MFnTypedAttribute inputStartPointsAttr;
 	MFnTypedAttribute outputGeometryAttr;
 
 	MStatus returnStatus;
 
-	// TODO: create input/output attributes
-	TerrainShaperNode::time = inputTimeAttr.create("time", "tm", MFnUnitAttribute::kTime, 0.0, &returnStatus);
-	McheckErr(returnStatus, "ERROR creating LSystemNode time attribute\n");
-
+	// create input/output attributes
 	TerrainShaperNode::detailMap = inputDetailMapAttr.create("detailMap", "dm", MFnData::kString, 0);
 	McheckErr(returnStatus, "ERROR creating LSystemNode detail map attribute\n");
 
@@ -48,10 +41,7 @@ MStatus TerrainShaperNode::initialize()
 	TerrainShaperNode::outMesh = outputGeometryAttr.create("outMesh", "out", MFnData::kMesh, &returnStatus);
 	McheckErr(returnStatus, "ERROR creating LSystemNode output attribute\n");
 
-	// TODO: add attributes
-	returnStatus = addAttribute(TerrainShaperNode::time);
-	McheckErr(returnStatus, "ERROR adding time attribute\n");
-
+	// add attributes
 	returnStatus = addAttribute(TerrainShaperNode::detailMap);
 	McheckErr(returnStatus, "ERROR adding detail map attribute\n");
 
@@ -61,10 +51,7 @@ MStatus TerrainShaperNode::initialize()
 	returnStatus = addAttribute(TerrainShaperNode::outMesh);
 	McheckErr(returnStatus, "ERROR adding output attribute\n");
 
-	// TODO: attribute effects
-	returnStatus = attributeAffects(TerrainShaperNode::time, TerrainShaperNode::outMesh);
-	McheckErr(returnStatus, "ERROR in attributeAffects for time\n");
-
+	// attribute effects
 	returnStatus = attributeAffects(TerrainShaperNode::detailMap, TerrainShaperNode::outMesh);
 	McheckErr(returnStatus, "ERROR in attributeAffects for detail map\n");
 
@@ -80,12 +67,7 @@ MStatus TerrainShaperNode::compute(const MPlug & plug, MDataBlock & data)
 
 	if (plug == outMesh) {
 
-		// TODO: get input 
-
-		// get time
-		MDataHandle timeData = data.inputValue(time, &returnStatus);
-		McheckErr(returnStatus, "ERROR getting time data handle\n");
-		MTime time = timeData.asTime();
+		// get input
 
 		// det detail map
 		MDataHandle detailMapData = data.inputValue(detailMap, &returnStatus);
@@ -111,7 +93,7 @@ MStatus TerrainShaperNode::compute(const MPlug & plug, MDataBlock & data)
 		detailMaps.push_back(detailMapFilename.asChar());
 		Image heightMap = runAlgorithm(detailMaps, startPointsFilename.asChar());
 
-		heightMap.save("C:\\Users\\caroline\\Documents\\CIS_660_windows\\CImg_Test.bmp");
+		heightMap.save("C:\\Users\\caroline\\Documents\\CIS_660_windows\\TerrainShaperNode\\Images\\OutHeightMap.bmp");
 
 
 		// TODO: use heightMap to make terrain
