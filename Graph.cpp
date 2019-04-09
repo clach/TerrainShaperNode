@@ -1,9 +1,10 @@
 #include "graph.h"
 
 #include <deque>
+#include <functional> 
 
 Graph::Graph(int x, int y) : xDim(x), yDim(y), maxHeight(1000), detailMaps(std::vector<Image>()), 
-startPoints(std::vector<std::pair<int, int>>())
+startPoints(std::vector<std::pair<int, int>>())//, dist(std::vector<float>(xDim * yDim, INFINITY))
 {}
 
 Graph::~Graph()
@@ -41,20 +42,33 @@ float Graph::weightFunctionWithMaps(int x, int y)
 
 }
 
+
 // sorts nodes by height, from tallest to shortest heights
 struct nodeCompare
 {
 	bool operator()(const Node* n1, const Node* n2) const
 	{
 		return n1->height < n2->height;
+		//return dist[n1->coords.first * n1->coords.second] < dist[n2->coords.first * n2->coords.second];
 	}
 };
 
-void Graph::shortestPath(std::vector<std::pair<int, int>> startCoords)
+bool Graph::Compare(Node* n1, Node* n2) {
+	//return dist[n1->coords.first * n1->coords.second] < dist[n2->coords.first * n2->coords.second];'
+	return false;
+}
+
+
+
+
+std::vector<std::vector<float>> Graph::shortestPath(std::vector<Point> startCoords)
 {
+	// make array of size xDim * yDim with all values initialized to 0
+	std::vector<float> yHeights(yDim, 0);
+	std::vector<std::vector<float>> heights(xDim, yHeights);
+
 	std::priority_queue<Node*, std::vector<Node*>, nodeCompare> queue;
-	//std::vector<float> dist(xDim * yDim, INFINITY);
-	
+
 	// push back start coordinates
 	for (int i = 0; i < startCoords.size(); i++)
 	{
@@ -64,13 +78,13 @@ void Graph::shortestPath(std::vector<std::pair<int, int>> startCoords)
 		n->height = height;
 		queue.push(n);
 
-		//dist[startCoords[i].first * startCoords[i].second] = height;
+		heights[startCoords[i].first][startCoords[i].second] = height;
 	}
 
 	while (!queue.empty())
 	{
 		// pop current highest node
-		Node* n = queue.top();
+		Node* n = new Node(*queue.top());
 		queue.pop();
 		n->processed = true;
 
@@ -94,13 +108,25 @@ void Graph::shortestPath(std::vector<std::pair<int, int>> startCoords)
 						// calculate "edge weight" d dynamically
 						float weight = weightFunctionWithMaps(x, y); // TODO: update this w/ real weight fxn
 
-						if (neighbor->height < n->height - weight)
+						float neighborHeight = heights[neighbor->coords.first][neighbor->coords.second];
+						float nHeight = heights[n->coords.first][n->coords.second];
+
+						//if (neighbor->height < n->height - weight)
+						if (neighborHeight < nHeight - weight)
 						{
-							neighbor->height = n->height - weight;
-							Node* newNeighbor = new Node(*neighbor);
+							//neighbor->height = n->height - weight;
+							neighborHeight = nHeight - weight;
+							heights[neighbor->coords.first][neighbor->coords.second] = neighborHeight;
+
+							//Node* newNeighbor = new Node(*neighbor);
 							//Node* newNeighbor = new Node(neighbor->coords.first, neighbor->coords.second);
 							//newNeighbor->height = neighbor->height;
+							Node* newNeighbor = new Node(*neighbor);
+							newNeighbor->height = neighborHeight;
 							queue.push(newNeighbor);
+
+
+							//queue.push(neighbor);
 						}
 					}
 				}
@@ -109,7 +135,7 @@ void Graph::shortestPath(std::vector<std::pair<int, int>> startCoords)
 	}
 
 
-	return;
+	return heights;
 }
 
 
@@ -138,7 +164,7 @@ Image Graph::run()
 	else {
 		// push back a number of random starting points
 
-		int numStartCoords = 15; // TODO: better way of determining this number
+		int numStartCoords = 2; // TODO: better way of determining this number
 		for (int i = 0; i < numStartCoords; i++)
 		{
 			Point coords = Point(rand() % xDim, rand() % yDim);
@@ -147,26 +173,27 @@ Image Graph::run()
 	}
 	
 	// run modified Dijkstra's
-	shortestPath(startCoords);
+	std::vector<std::vector<float>> heights = shortestPath(startCoords);
 	
 	// convert grid to height map (Image) representation
-	// TODO: this is kind of ugly
 	Image heightMap(xDim, yDim, 1, 3, 0);
-	//heightMap.fill(0);
+	heightMap.fill(0);
 
 	for (int x = 0; x < xDim; x++)
 	{
 		for (int y = 0; y < yDim; y++)
 		{
-			Node* n = nodes[x][y];
+			//Node* n = nodes[x][y];
+			float height = heights[x][y];
 
 			// add some random value to avoid completely flat regions
-			float lo = -10;
-			float hi = 10;
-			float randVal = lo + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / (hi - lo)));
+			//float lo = -10;
+			//float hi = 10;
+			//float randVal = lo + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / (hi - lo)));
+			float randVal = 0;
 
 			// remap height value from (0, maxHeight) to (0, 255)
-			float heightRemapped = (n->height + randVal) * (255.f / maxHeight);
+			float heightRemapped = (height + randVal) * (255.f / maxHeight);
 
 			// TODO: replace with clamp function
 			if (heightRemapped > 255) {
