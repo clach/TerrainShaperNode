@@ -27,10 +27,11 @@ public:
 
 	// node input and output
 	static MObject detailMap;
-	static MObject startPoints;
+	static MObject startPointsMap;
+	static MObject numStartPoints;
 	static MObject	outMesh;
 
-	Image runAlgorithm(std::vector<std::string> inDetailMapFilenames, std::string inStartPointsFilenames);
+	Image runAlgorithm(std::vector<std::string> inDetailMapFilenames, std::string inStartPointsFilenames, int numStartPoints);
 
 protected:
 	

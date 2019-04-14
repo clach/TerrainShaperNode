@@ -19,6 +19,25 @@ float weightFunction()
 	return lo + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / (hi - lo)));
 }
 
+float Graph::weightFunctionDunes(int x1, int y1, int x2, int y2) {
+	float deltaMin = 5.0;
+	float deltaMax = 50.0;
+
+	float windWeight = weightFunctionWithMaps(x1, y1);
+
+	vec3 windDir = vec3(1, 1, 1);
+	windDir.Normalize();
+	//vec3 dist = Distance(vec3(x1, y2, 0), vec3(x2, y2, 0));
+	vec3 dist = vec3(x1, y2, 0) - vec3(x2, y2, 0);
+
+	float dot = Dot(windDir, dist);
+	dot = (dot + 1.0) / 2.0; // remap from (-1, 1) to (0, 1)
+	dot = (dot * (deltaMax - deltaMin)) + deltaMin; // remap from (0, 1) to (deltaMin, deltaMax)
+	dot *= windWeight;
+
+	return dot;
+}
+
 float Graph::weightFunctionWithMaps(int x, int y)
 {
 	if (!detailMaps.empty())
@@ -111,7 +130,8 @@ std::vector<std::vector<float>> Graph::shortestPath(std::vector<Point> startCoor
 						float nHeight = heights[n->coords.first][n->coords.second];
 
 						// calculate "edge weight" d dynamically
-						float weight = weightFunctionWithMaps(x, y); // TODO: update this w/ real weight fxn
+						//float weight = weightFunctionWithMaps(x, y); // TODO: update this w/ real weight fxn
+						float weight = weightFunctionDunes(neighbor->coords.first, neighbor->coords.first, n->coords.first, n->coords.first);
 
 						if (neighborHeight < nHeight - weight)
 						{
@@ -128,7 +148,6 @@ std::vector<std::vector<float>> Graph::shortestPath(std::vector<Point> startCoor
 		}
 	}
 
-
 	for (int x = 0; x < xDim; x++)
 	{
 		for (int y = 0; y < yDim; y++)
@@ -141,7 +160,6 @@ std::vector<std::vector<float>> Graph::shortestPath(std::vector<Point> startCoor
 	return heights;
 }
 
-
 Image Graph::run()
 {
 	//srand(time(NULL));
@@ -151,10 +169,7 @@ Image Graph::run()
 		startCoords = startPoints;
 	}
 	else {
-		// push back a number of random starting points
-
-		int numStartCoords = 10; // TODO: better way of determining this number
-		for (int i = 0; i < numStartCoords; i++)
+		for (int i = 0; i < numStartPoints; i++)
 		{
 			Point coords = Point(rand() % xDim, rand() % yDim);
 			startCoords.push_back(coords);
@@ -208,7 +223,7 @@ void Graph::setDetailMaps(std::vector<std::string> detailMapsFilenames) {
 	}
 }
 
-void Graph::setStartPoints(std::string startPointsFilename)
+void Graph::setStartPointsMap(std::string startPointsFilename)
 {
 	if (startPointsFilename != "") {
 		const char* startPointsFilenameChar = startPointsFilename.c_str();
@@ -225,4 +240,9 @@ void Graph::setStartPoints(std::string startPointsFilename)
 		}
 	}
 }
+
+void Graph::setNumStartPoints(int numStartPoints) {
+	this->numStartPoints = numStartPoints;
+}
+
 

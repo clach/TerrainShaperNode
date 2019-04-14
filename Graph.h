@@ -32,22 +32,24 @@ public:
 
 };
 
-class NodeCompareClass {
-public:
-
-	bool operator()(const Node* n1, const Node* n2) const
-	{
-		//return n1->height < n2->height;
-		//return Graph::dist[n1->coords.first * n1->coords.second] < dist[n2->coords.first * n2->coords.second];
-	}
-};
-
 class Graph
 {
+
+public:
+	Graph(int x, int y); // takes in grid dimensions
+	~Graph();
+
+	Image run(); // return height map produced by algorithm
+
+	void setDetailMaps(std::vector<std::string> detailMapsFilenames);
+	void setStartPointsMap(std::string startPointsFilenames);
+	void setNumStartPoints(int numStartPoints);
+
 protected:
 	std::vector<std::vector<float>> shortestPath(std::vector<Point> startCoords);
 
 	float weightFunctionWithMaps(int x, int y);
+	float weightFunctionDunes(int x1, int y1, int x2, int y2);
 
 	std::vector<Image> detailMaps;
 	std::vector<Point> startPoints;
@@ -63,14 +65,6 @@ protected:
 	// (all start coords will have max height)
 	float maxHeight;
 
-public:
-	Graph(int x, int y); // takes in grid dimensions
-	~Graph();
-
-	Image run(); // return height map produced by algorithm
-
-	void setDetailMaps(std::vector<std::string> detailMapsFilenames);
-	void setStartPoints(std::string startPointsFilenames);
-
+	int numStartPoints;
 
 };

@@ -14,7 +14,8 @@ TerrainShaperNode::TerrainShaperNode()
 
 
 MObject TerrainShaperNode::detailMap;
-MObject TerrainShaperNode::startPoints;
+MObject TerrainShaperNode::startPointsMap;
+MObject TerrainShaperNode::numStartPoints;
 MObject TerrainShaperNode::outMesh;
 MTypeId TerrainShaperNode::id(0x80000);
 
@@ -26,27 +27,35 @@ void* TerrainShaperNode::creator()
 MStatus TerrainShaperNode::initialize()
 {
 	MFnTypedAttribute inputDetailMapAttr;
-	MFnTypedAttribute inputStartPointsAttr;
+	MFnTypedAttribute inputStartPointsMapAttr;
+	MFnNumericAttribute inputNumStartPointsAttr;
+
 	MFnTypedAttribute outputGeometryAttr;
 
 	MStatus returnStatus;
 
 	// create input/output attributes
 	TerrainShaperNode::detailMap = inputDetailMapAttr.create("detailMap", "dm", MFnData::kString, 0);
-	McheckErr(returnStatus, "ERROR creating LSystemNode detail map attribute\n");
+	McheckErr(returnStatus, "ERROR creating TerrainShaperNode detail map attribute\n");
 
-	TerrainShaperNode::startPoints = inputStartPointsAttr.create("startPoints", "sp", MFnData::kString, 0);
-	McheckErr(returnStatus, "ERROR creating LSystemNode startPoints attribute\n");
+	TerrainShaperNode::startPointsMap = inputStartPointsMapAttr.create("startPointsMap", "spm", MFnData::kString, 0);
+	McheckErr(returnStatus, "ERROR creating TerrainShaperNode start points map attribute\n");
+
+	TerrainShaperNode::numStartPoints = inputNumStartPointsAttr.create("numberStartPoints", "nsp", MFnNumericData::kInt, 1);
+	McheckErr(returnStatus, "ERROR creating TerrainShaperNode number of start points attribute\n");
 
 	TerrainShaperNode::outMesh = outputGeometryAttr.create("outMesh", "out", MFnData::kMesh, &returnStatus);
-	McheckErr(returnStatus, "ERROR creating LSystemNode output attribute\n");
+	McheckErr(returnStatus, "ERROR creating TerrainShaperNode output attribute\n");
 
 	// add attributes
 	returnStatus = addAttribute(TerrainShaperNode::detailMap);
 	McheckErr(returnStatus, "ERROR adding detail map attribute\n");
 
-	returnStatus = addAttribute(TerrainShaperNode::startPoints);
-	McheckErr(returnStatus, "ERROR adding start points attribute\n");
+	returnStatus = addAttribute(TerrainShaperNode::startPointsMap);
+	McheckErr(returnStatus, "ERROR adding start points map attribute\n");
+
+	returnStatus = addAttribute(TerrainShaperNode::numStartPoints);
+	McheckErr(returnStatus, "ERROR adding num start points attribute\n");
 
 	returnStatus = addAttribute(TerrainShaperNode::outMesh);
 	McheckErr(returnStatus, "ERROR adding output attribute\n");
@@ -55,8 +64,11 @@ MStatus TerrainShaperNode::initialize()
 	returnStatus = attributeAffects(TerrainShaperNode::detailMap, TerrainShaperNode::outMesh);
 	McheckErr(returnStatus, "ERROR in attributeAffects for detail map\n");
 
-	returnStatus = attributeAffects(TerrainShaperNode::startPoints, TerrainShaperNode::outMesh);
-	McheckErr(returnStatus, "ERROR in attributeAffects for start point\n");
+	returnStatus = attributeAffects(TerrainShaperNode::startPointsMap, TerrainShaperNode::outMesh);
+	McheckErr(returnStatus, "ERROR in attributeAffects for start points map\n");
+
+	returnStatus = attributeAffects(TerrainShaperNode::numStartPoints, TerrainShaperNode::outMesh);
+	McheckErr(returnStatus, "ERROR in attributeAffects for number of start points\n");
 
 	return MS::kSuccess;
 }
@@ -74,10 +86,15 @@ MStatus TerrainShaperNode::compute(const MPlug & plug, MDataBlock & data)
 		McheckErr(returnStatus, "ERROR getting detail map data handle\n");
 		MString detailMapFilename = detailMapData.asString();
 
-		// get start points
-		MDataHandle startPointsData = data.inputValue(startPoints, &returnStatus);
+		// get start points map
+		MDataHandle startPointsMapData = data.inputValue(startPointsMap, &returnStatus);
 		McheckErr(returnStatus, "ERROR getting start points data handle\n");
-		MString startPointsFilename = startPointsData.asString();
+		MString startPointsMapFilename = startPointsMapData.asString();
+
+		// get num start points
+		MDataHandle numStartPointsData = data.inputValue(numStartPoints, &returnStatus);
+		McheckErr(returnStatus, "ERROR getting number of start points data handle\n");
+		int numStartPoints = numStartPointsData.asInt();
 
 		// get output geometry //////
 		MDataHandle outputHandle = data.outputValue(outMesh, &returnStatus);
@@ -91,7 +108,7 @@ MStatus TerrainShaperNode::compute(const MPlug & plug, MDataBlock & data)
 
 		std::vector<std::string> detailMaps;
 		detailMaps.push_back(detailMapFilename.asChar());
-		Image heightMap = runAlgorithm(detailMaps, startPointsFilename.asChar());
+		Image heightMap = runAlgorithm(detailMaps, startPointsMapFilename.asChar(), numStartPoints);
 
 		heightMap.save("C:\\Users\\caroline\\Documents\\CIS_660_windows\\TerrainShaperNode\\Images\\OutHeightMap.bmp");
 
@@ -111,11 +128,13 @@ MStatus TerrainShaperNode::compute(const MPlug & plug, MDataBlock & data)
 }
 
 
-Image TerrainShaperNode::runAlgorithm(std::vector<std::string> inDetailMapFilenames, std::string inStartPointsFilenames) {
+Image TerrainShaperNode::runAlgorithm(std::vector<std::string> inDetailMapFilenames, std::string inStartPointsFilenames,
+	int numStartPoints) {
 	// run algorithm and display height map
 	Graph g = Graph(512, 512);
 	g.setDetailMaps(inDetailMapFilenames);
-	g.setStartPoints(inStartPointsFilenames);
+	g.setStartPointsMap(inStartPointsFilenames);
+	g.setNumStartPoints(numStartPoints);
 	Image heightMap = g.run();
 
 	//Image heightMap = Image();
