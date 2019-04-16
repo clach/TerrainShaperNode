@@ -1,3 +1,17 @@
 global proc test() {
-    
+    polyPlane -sx 10 -sy 10 -w 20 -h 20 -n myPolyPlane;
+    //float $y = 0;
+    //int $count;
+    //int $nVerts[] = `polyEvaluate -v myPolyPlane`; // get number of vertices
+    //for ($count = 0; $count < $nVerts[0]; $count++)
+    //{
+      //  float $pos[] = `xform -q -ws -t myPolyPlane.vtx[$count]`;
+        //print $pos;
+        //print "\n";
+        //float $randVal = `rand 10`;
+        //xform -ws -t $pos[0] $pos[0] $pos[2] myPolyPlane.vtx[$count];
+        //$y++;
+    //}
 };
+
+test();

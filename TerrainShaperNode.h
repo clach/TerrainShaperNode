@@ -9,7 +9,10 @@
 #include <maya/MFnMeshData.h>
 #include <maya/MFloatPointArray.h>
 #include <maya/MGlobal.h>
-#include <maya/MImage.h>
+#include <maya/MFnPointArrayData.h>
+#include <maya/MFnFloatArrayData.h>
+#include <maya/MFloatArray.h>
+#include <maya/MPointArray.h>
 #include "Graph.h"
 
 //#include "opencv2\highgui\highgui.hpp"
@@ -29,7 +32,8 @@ public:
 	static MObject detailMap;
 	static MObject startPointsMap;
 	static MObject numStartPoints;
-	static MObject	outMesh;
+	//static MObject	outMesh;
+	static MObject outPoints;
 
 	Image runAlgorithm(std::vector<std::string> inDetailMapFilenames, std::string inStartPointsFilenames, int numStartPoints);
 

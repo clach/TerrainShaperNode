@@ -16,7 +16,8 @@ TerrainShaperNode::TerrainShaperNode()
 MObject TerrainShaperNode::detailMap;
 MObject TerrainShaperNode::startPointsMap;
 MObject TerrainShaperNode::numStartPoints;
-MObject TerrainShaperNode::outMesh;
+//MObject TerrainShaperNode::outMesh;
+MObject TerrainShaperNode::outPoints;
 MTypeId TerrainShaperNode::id(0x80000);
 
 void* TerrainShaperNode::creator()
@@ -30,7 +31,9 @@ MStatus TerrainShaperNode::initialize()
 	MFnTypedAttribute inputStartPointsMapAttr;
 	MFnNumericAttribute inputNumStartPointsAttr;
 
-	MFnTypedAttribute outputGeometryAttr;
+	//MFnTypedAttribute outputGeometryAttr;
+
+	MFnTypedAttribute outputPointsAttr; ///////////////////
 
 	MStatus returnStatus;
 
@@ -44,8 +47,11 @@ MStatus TerrainShaperNode::initialize()
 	TerrainShaperNode::numStartPoints = inputNumStartPointsAttr.create("numberStartPoints", "nsp", MFnNumericData::kInt, 1);
 	McheckErr(returnStatus, "ERROR creating TerrainShaperNode number of start points attribute\n");
 
-	TerrainShaperNode::outMesh = outputGeometryAttr.create("outMesh", "out", MFnData::kMesh, &returnStatus);
-	McheckErr(returnStatus, "ERROR creating TerrainShaperNode output attribute\n");
+	//TerrainShaperNode::outMesh = outputGeometryAttr.create("outMesh", "om", MFnData::kMesh, &returnStatus);
+	//McheckErr(returnStatus, "ERROR creating TerrainShaperNode output mesh attribute\n");
+
+	TerrainShaperNode::outPoints = outputPointsAttr.create("outPoints", "op", MFnData::kFloatArray, &returnStatus);
+	McheckErr(returnStatus, "ERROR creating TerrainShaperNode output points attribute\n");
 
 	// add attributes
 	returnStatus = addAttribute(TerrainShaperNode::detailMap);
@@ -57,17 +63,29 @@ MStatus TerrainShaperNode::initialize()
 	returnStatus = addAttribute(TerrainShaperNode::numStartPoints);
 	McheckErr(returnStatus, "ERROR adding num start points attribute\n");
 
-	returnStatus = addAttribute(TerrainShaperNode::outMesh);
-	McheckErr(returnStatus, "ERROR adding output attribute\n");
+	//returnStatus = addAttribute(TerrainShaperNode::outMesh);
+	//McheckErr(returnStatus, "ERROR adding output mesh attribute\n");
+
+	returnStatus = addAttribute(TerrainShaperNode::outPoints);
+	McheckErr(returnStatus, "ERROR adding output points attribute\n");
 
 	// attribute effects
-	returnStatus = attributeAffects(TerrainShaperNode::detailMap, TerrainShaperNode::outMesh);
+	//returnStatus = attributeAffects(TerrainShaperNode::detailMap, TerrainShaperNode::outMesh);
+	//McheckErr(returnStatus, "ERROR in attributeAffects for detail map\n");
+
+	//returnStatus = attributeAffects(TerrainShaperNode::startPointsMap, TerrainShaperNode::outMesh);
+//	McheckErr(returnStatus, "ERROR in attributeAffects for start points map\n");
+
+	//returnStatus = attributeAffects(TerrainShaperNode::numStartPoints, TerrainShaperNode::outMesh);
+	//McheckErr(returnStatus, "ERROR in attributeAffects for number of start points\n");
+
+	returnStatus = attributeAffects(TerrainShaperNode::detailMap, TerrainShaperNode::outPoints);
 	McheckErr(returnStatus, "ERROR in attributeAffects for detail map\n");
 
-	returnStatus = attributeAffects(TerrainShaperNode::startPointsMap, TerrainShaperNode::outMesh);
+	returnStatus = attributeAffects(TerrainShaperNode::startPointsMap, TerrainShaperNode::outPoints);
 	McheckErr(returnStatus, "ERROR in attributeAffects for start points map\n");
 
-	returnStatus = attributeAffects(TerrainShaperNode::numStartPoints, TerrainShaperNode::outMesh);
+	returnStatus = attributeAffects(TerrainShaperNode::numStartPoints, TerrainShaperNode::outPoints);
 	McheckErr(returnStatus, "ERROR in attributeAffects for number of start points\n");
 
 	return MS::kSuccess;
@@ -77,7 +95,7 @@ MStatus TerrainShaperNode::compute(const MPlug & plug, MDataBlock & data)
 {
 	MStatus returnStatus;
 
-	if (plug == outMesh) {
+	if (plug == outPoints) {
 
 		// get input
 
@@ -97,15 +115,18 @@ MStatus TerrainShaperNode::compute(const MPlug & plug, MDataBlock & data)
 		int numStartPoints = numStartPointsData.asInt();
 
 		// get output geometry //////
-		MDataHandle outputHandle = data.outputValue(outMesh, &returnStatus);
-		McheckErr(returnStatus, "ERROR getting polygon data handle\n");
+		//MDataHandle outputHandle = data.outputValue(outMesh, &returnStatus);
+		//McheckErr(returnStatus, "ERROR getting polygon data handle\n");
 
-		MFnMeshData dataCreator;
-		MObject newOutputData = dataCreator.create(&returnStatus);
-		McheckErr(returnStatus, "ERROR creating outputData\n");
+		MDataHandle outputHandle = data.outputValue(outPoints, &returnStatus);
+		McheckErr(returnStatus, "ERROR getting output points data handle\n");
+
+		//MFnMeshData dataCreator;
+		//MObject newOutputData = dataCreator.create(&returnStatus);
+		//McheckErr(returnStatus, "ERROR creating outputData\n");
 
 		// TODO: create new output data
-
+		
 		std::vector<std::string> detailMaps;
 		detailMaps.push_back(detailMapFilename.asChar());
 		Image heightMap = runAlgorithm(detailMaps, startPointsMapFilename.asChar(), numStartPoints);
@@ -115,7 +136,41 @@ MStatus TerrainShaperNode::compute(const MPlug & plug, MDataBlock & data)
 
 		// TODO: use heightMap to make terrain
 
-		MGlobal::executeCommand(MString("test();"));
+		MFloatArray floatArray;
+
+		std::vector<float> heightsVector;
+
+		float strength = 5;
+		// fill point array with height values from height map
+		cimg_forXY(heightMap, x, y) {
+			int r = (int)heightMap(x, y, 0, 0);
+			int g = (int)heightMap(x, y, 0, 1);
+			int b = (int)heightMap(x, y, 0, 2);
+			float height = 0.21 * r + 0.72 * g + 0.07 * b; // height is from [0, 255]
+			height *= strength; // weight height by strength
+			floatArray.append(height);
+			heightsVector.push_back(height);
+		}
+
+		MFnFloatArrayData dataCreator;
+		MObject newOutputData = dataCreator.create(floatArray, &returnStatus);
+		McheckErr(returnStatus, "ERROR creating newOutputData\n");
+
+
+		float lo = 0;
+		float hi = 50;
+		float val = lo + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / (hi - lo)));
+
+		MString testCommand =
+			MString("int $count;\n") +
+			MString("int $nVerts[] = `polyEvaluate -v myPolyPlane`;\n") +
+			MString("for ($count = 0; $count < $nVerts[0]; $count++) {\n") +
+			MString("float $pos[] = `xform -q -ws -t myPolyPlane.vtx[$count]`;\n") +
+			MString("float $randVal = `rand 10`;\n") +
+			MString("xform -ws -t $pos[0] $randVal $pos[2] myPolyPlane.vtx[$count];\n") +
+			MString("}\n");
+
+		MGlobal::executeCommand(testCommand);
 
 		outputHandle.set(newOutputData);
 		data.setClean(plug);
