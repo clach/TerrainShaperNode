@@ -14,17 +14,26 @@
 #include <maya/MFloatArray.h>
 #include <maya/MPointArray.h>
 #include "Graph.h"
+#include <maya/MItGeometry.h>
 
-//#include "opencv2\highgui\highgui.hpp"
+#pragma comment(lib,"Foundation.lib")
+#pragma comment(lib,"OpenMaya.lib")
+#pragma comment(lib,"OpenMayaFx.lib")
+#pragma comment(lib,"Image.lib")
+#pragma comment(lib,"OpenMayaAnim.lib")
+#pragma comment(lib,"OpenMayaUi.lib") 
 
-class TerrainShaperNode : public MPxNode
+#include <maya/MPxDeformerNode.h>
+
+class TerrainShaperNode : public MPxDeformerNode
 {
 public:
-	TerrainShaperNode();
+	TerrainShaperNode() {}
 	virtual ~TerrainShaperNode() {}
 	static  void*	creator();
 	static  MStatus initialize();
-	virtual MStatus compute(const MPlug& plug, MDataBlock& data);
+	virtual MStatus deform(MDataBlock& data, MItGeometry& itGeo,
+		const MMatrix &localToWorldMatrix, unsigned int mIndex);
 
 	static MTypeId	id;
 
@@ -32,12 +41,9 @@ public:
 	static MObject detailMap;
 	static MObject startPointsMap;
 	static MObject numStartPoints;
-	//static MObject	outMesh;
-	static MObject outPoints;
+	static MObject strength;
 
 	Image runAlgorithm(std::vector<std::string> inDetailMapFilenames, std::string inStartPointsFilenames, int numStartPoints);
-
-protected:
 	
 
 };

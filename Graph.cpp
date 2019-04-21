@@ -130,8 +130,9 @@ std::vector<std::vector<float>> Graph::shortestPath(std::vector<Point> startCoor
 						float nHeight = heights[n->coords.first][n->coords.second];
 
 						// calculate "edge weight" d dynamically
-						//float weight = weightFunctionWithMaps(x, y); // TODO: update this w/ real weight fxn
-						float weight = weightFunctionDunes(neighbor->coords.first, neighbor->coords.first, n->coords.first, n->coords.first);
+						float weight = weightFunctionWithMaps(x, y); // TODO: update this w/ real weight fxn
+						//float weight = weightFunctionDunes(neighbor->coords.first, neighbor->coords.first, n->coords.first, n->coords.first);
+						//float weight = weightFunction();
 
 						if (neighborHeight < nHeight - weight)
 						{
@@ -190,7 +191,6 @@ Image Graph::run()
 		float lo = -10;
 		float hi = 10;
 		float randVal = lo + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / (hi - lo)));
-		//float randVal = 0;
 
 		// remap height value from (0, maxHeight) to (0, 255)
 		float heightRemapped = (height + randVal) * (255.f / maxHeight);

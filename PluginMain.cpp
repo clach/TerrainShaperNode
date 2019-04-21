@@ -27,11 +27,13 @@ MStatus initializePlugin(MObject obj)
 
 	// register node
 	status = plugin.registerNode("TerrainShaperNode", TerrainShaperNode::id, TerrainShaperNode::creator,
-		TerrainShaperNode::initialize);
+		TerrainShaperNode::initialize, MPxNode::kDeformerNode);
 	if (!status) {
 		status.perror("registerNode");
 		return status;
 	}
+	MString nodeClassName("TerrainShaperNode");
+
 
 	// auto-register TerrainShaper menu command
 	MString menuCmd = "source \"" + plugin.loadPath() + "/TerrainShaperPluginWindow\";";

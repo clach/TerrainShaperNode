@@ -1,10 +1,13 @@
 global proc Create_TerrainShaper_Node() 
 {
-    createNode transform -n TerrainShaper1;
-    createNode mesh -n TerrainShaperMesh1 -p TerrainShaper1;
-    sets -add initialShadingGroup TerrainShaperMesh1;
-    createNode TerrainShaperNode -n TerrainShaperNode1;
-    print TerrainShaperNode1.outPoints;
+    //createNode transform -n TerrainShaper1;
+    //createNode mesh -n TerrainShaperMesh1 -p TerrainShaper1;
+    //sets -add initialShadingGroup TerrainShaperMesh1;
+    //createNode TerrainShaperNode -n TerrainShaperNode1;
+    //print TerrainShaperNode1.outPoints;
+    polyPlane -sx 511 -sy 511 -w 100 -h 100 -n myPolyPlane;
+    deformer -type TerrainShaperNode;
+
 }
 
 menu -label "TerrainShaper" -p MayaWindow;
