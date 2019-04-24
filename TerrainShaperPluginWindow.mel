@@ -5,7 +5,7 @@ global proc Create_TerrainShaper_Node()
     //sets -add initialShadingGroup TerrainShaperMesh1;
     //createNode TerrainShaperNode -n TerrainShaperNode1;
     //print TerrainShaperNode1.outPoints;
-    polyPlane -sx 511 -sy 511 -w 100 -h 100 -n myPolyPlane;
+    polyPlane -sx 40 -sy 40 -w 100 -h 100 -n myPolyPlane;
     deformer -type TerrainShaperNode;
 
 }

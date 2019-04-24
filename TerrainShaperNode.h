@@ -3,6 +3,7 @@
 #include <maya/MFnNumericAttribute.h>
 #include <maya/MFnTypedAttribute.h>
 #include <maya/MFnUnitAttribute.h>
+#include <maya/MFnEnumAttribute.h>
 #include <maya/MTime.h>
 #include <maya/MAngle.h>
 #include <maya/MFnMesh.h>
@@ -38,12 +39,14 @@ public:
 	static MTypeId	id;
 
 	// node input and output
+	static MObject weightFunction;
 	static MObject detailMap;
 	static MObject startPointsMap;
 	static MObject numStartPoints;
 	static MObject strength;
 
-	Image runAlgorithm(std::vector<std::string> inDetailMapFilenames, std::string inStartPointsFilenames, int numStartPoints);
+	Image runAlgorithm(short weightFunction, std::vector<std::string> inDetailMapFilenames, 
+		std::string inStartPointsFilenames, int numStartPoints);
 	
 
 };

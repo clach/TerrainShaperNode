@@ -39,14 +39,14 @@ public:
 	Graph(int x, int y); // takes in grid dimensions
 	~Graph();
 
-	Image run(); // return height map produced by algorithm
+	Image run(short weightFunction); // return height map produced by algorithm
 
 	void setDetailMaps(std::vector<std::string> detailMapsFilenames);
 	void setStartPointsMap(std::string startPointsFilenames);
 	void setNumStartPoints(int numStartPoints);
 
 protected:
-	std::vector<std::vector<float>> shortestPath(std::vector<Point> startCoords);
+	std::vector<std::vector<float>> shortestPath(short weightFunction, std::vector<Point> startCoords);
 
 	float weightFunctionWithMaps(int x, int y);
 	float weightFunctionDunes(int x1, int y1, int x2, int y2);

@@ -25,15 +25,26 @@ float Graph::weightFunctionDunes(int x1, int y1, int x2, int y2) {
 
 	float windWeight = weightFunctionWithMaps(x1, y1);
 
-	vec3 windDir = vec3(1, 1, 1);
-	windDir.Normalize();
-	//vec3 dist = Distance(vec3(x1, y2, 0), vec3(x2, y2, 0));
-	vec3 dist = vec3(x1, y2, 0) - vec3(x2, y2, 0);
+	std::vector<float> windDir = { 1, 0, 0 };
+	std::vector<float> dist = { float(x1 - x2), float(y1 - y2), 0 };
 
-	float dot = Dot(windDir, dist);
-	dot = (dot + 1.0) / 2.0; // remap from (-1, 1) to (0, 1)
+	float dot = windDir[0] * dist[0] + windDir[1] * dist[1] + windDir[2] * dist[2];
+	dot = (dot + 1.0f) / 2.0f; // remap from (-1, 1) to (0, 1)
 	dot = (dot * (deltaMax - deltaMin)) + deltaMin; // remap from (0, 1) to (deltaMin, deltaMax)
 	dot *= windWeight;
+
+	dot /= 50;
+
+	if (dot <= 0)
+	{
+		std::cout << dot << "\n";
+		return 0.f;
+	}
+	if (dot >= 1000)
+	{
+		std::cout << dot << "\n";
+		return 1000.f;
+	}
 
 	return dot;
 }
@@ -70,7 +81,7 @@ struct NodeCompare
 	}
 };
 
-std::vector<std::vector<float>> Graph::shortestPath(std::vector<Point> startCoords)
+std::vector<std::vector<float>> Graph::shortestPath(short weightFunction, std::vector<Point> startCoords)
 {
 	// make array of size xDim * yDim with all values initialized to 0
 	std::vector<float> heightsInner(yDim, 0);
@@ -129,10 +140,16 @@ std::vector<std::vector<float>> Graph::shortestPath(std::vector<Point> startCoor
 						float neighborHeight = heights[neighbor->coords.first][neighbor->coords.second];
 						float nHeight = heights[n->coords.first][n->coords.second];
 
-						// calculate "edge weight" d dynamically
-						float weight = weightFunctionWithMaps(x, y); // TODO: update this w/ real weight fxn
-						//float weight = weightFunctionDunes(neighbor->coords.first, neighbor->coords.first, n->coords.first, n->coords.first);
-						//float weight = weightFunction();
+						// calculate "edge weight" dynamically
+						float weight = 0;
+						switch ((int)weightFunction) {
+						case 0:
+							weight = weightFunctionWithMaps(x, y);
+							break;
+						case 1:
+							weight = weightFunctionDunes(neighbor->coords.first, neighbor->coords.first, n->coords.first, n->coords.first);
+							break;
+						}
 
 						if (neighborHeight < nHeight - weight)
 						{
@@ -161,7 +178,7 @@ std::vector<std::vector<float>> Graph::shortestPath(std::vector<Point> startCoor
 	return heights;
 }
 
-Image Graph::run()
+Image Graph::run(short weightFunction)
 {
 	//srand(time(NULL));
 	
@@ -178,7 +195,7 @@ Image Graph::run()
 	}
 	
 	// run modified Dijkstra's
-	std::vector<std::vector<float>> heights = shortestPath(startCoords);
+	std::vector<std::vector<float>> heights = shortestPath(weightFunction, startCoords);
 	
 	// convert grid to height map (Image) representation
 	Image heightMap(xDim, yDim, 1, 3, 0);
