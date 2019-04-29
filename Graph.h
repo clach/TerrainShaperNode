@@ -37,6 +37,7 @@ class Graph
 
 public:
 	Graph(int x, int y); // takes in grid dimensions
+
 	~Graph();
 
 	Image run(short weightFunction); // return height map produced by algorithm
@@ -60,6 +61,8 @@ protected:
 	// dimensions of grid
 	int xDim;
 	int yDim;
+
+	int numSubdivisions;
 
 	// maximum height of any grid coordinate
 	// (all start coords will have max height)

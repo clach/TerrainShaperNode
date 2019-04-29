@@ -1,25 +1,49 @@
 #include "graph.h"
-
-#include <deque>
 #include <functional> 
 
-Graph::Graph(int x, int y) : xDim(x), yDim(y), maxHeight(1000), detailMaps(std::vector<Image>()), 
-startPoints(std::vector<std::pair<int, int>>())//, dist(std::vector<float>(xDim * yDim, INFINITY))
-{}
+Graph::Graph(int x, int y) : numSubdivisions(x), xDim(x), yDim(y), maxHeight((1000.f / 512.f) * (float)x), detailMaps(std::vector<Image>()),
+	startPoints(std::vector<std::pair<int, int>>())
+{
+	cimg::exception_mode(0); // quiet cimg exceptions
+}
 
 Graph::~Graph()
 {}
 
-float weightFunction()
+// most basic weight function, returns float between (lo, hi)
+float randRange(float lo, float hi)
 {
-	// TODO: placeholder fxn
-	// return some float between (lo, hi)
-	float lo = 5;
-	float hi = 50;
 	return lo + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / (hi - lo)));
 }
 
-float Graph::weightFunctionDunes(int x1, int y1, int x2, int y2) {
+// weight function using pixel value of detail map
+float Graph::weightFunctionWithMaps(int x, int y)
+{
+	if (!detailMaps.empty())
+	{
+		float heightSum = 0;
+		for (int i = 0; i < detailMaps.size(); i++)
+		{
+			int r = (int)(detailMaps[i])(x, y, 0, 0);
+			int g = (int)(detailMaps[i])(x, y, 0, 1);
+			int b = (int)(detailMaps[i])(x, y, 0, 2);
+			heightSum += 0.21 * r + 0.72 * g + 0.07 * b;
+		}
+
+		float weight = 0.005;
+		float avgHeight =  weight * randRange(5, 50) * heightSum / detailMaps.size();
+
+		return avgHeight;
+	}
+	else {
+		return randRange(5, 50);
+	}
+
+}
+
+// weight function to create dunes
+float Graph::weightFunctionDunes(int x1, int y1, int x2, int y2)
+{
 	float deltaMin = 5.0;
 	float deltaMax = 50.0;
 
@@ -40,36 +64,13 @@ float Graph::weightFunctionDunes(int x1, int y1, int x2, int y2) {
 		std::cout << dot << "\n";
 		return 0.f;
 	}
-	if (dot >= 1000)
+	if (dot >= maxHeight)
 	{
 		std::cout << dot << "\n";
-		return 1000.f;
+		return maxHeight;
 	}
 
 	return dot;
-}
-
-float Graph::weightFunctionWithMaps(int x, int y)
-{
-	if (!detailMaps.empty())
-	{
-		float heightSum = 0;
-		for (int i = 0; i < detailMaps.size(); i++)
-		{
-			int r = (int)(detailMaps[i])(x, y, 0, 0);
-			int g = (int)(detailMaps[i])(x, y, 0, 1);
-			int b = (int)(detailMaps[i])(x, y, 0, 2);
-			heightSum += 0.21 * r + 0.72 * g + 0.07 * b;
-		}
-
-		float avgHeight = (weightFunction() / 500) * heightSum / detailMaps.size();
-
-		return avgHeight * (1000.0 / 256.0);
-	}
-	else {
-		return weightFunction();
-	}
-
 }
 
 // sorts nodes by height, from tallest to shortest heights
@@ -142,7 +143,8 @@ std::vector<std::vector<float>> Graph::shortestPath(short weightFunction, std::v
 
 						// calculate "edge weight" dynamically
 						float weight = 0;
-						switch ((int)weightFunction) {
+						switch ((int)weightFunction)
+						{
 						case 0:
 							weight = weightFunctionWithMaps(x, y);
 							break;
@@ -183,10 +185,12 @@ Image Graph::run(short weightFunction)
 	//srand(time(NULL));
 	
 	std::vector<Point> startCoords;
-	if (!startPoints.empty()) {
+	if (!startPoints.empty()) 
+	{
 		startCoords = startPoints;
 	}
-	else {
+	else
+	{
 		for (int i = 0; i < numStartPoints; i++)
 		{
 			Point coords = Point(rand() % xDim, rand() % yDim);
@@ -201,22 +205,26 @@ Image Graph::run(short weightFunction)
 	Image heightMap(xDim, yDim, 1, 3, 0);
 	heightMap.fill(0);
 
-	cimg_forXY(heightMap, x, y) {
+	cimg_forXY(heightMap, x, y)
+	{
 		float height = heights[x][y];
 
 		// add some random value to avoid completely flat regions
 		float lo = -10;
 		float hi = 10;
 		float randVal = lo + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / (hi - lo)));
+		randVal = (randVal / 512.f) * (float)numSubdivisions;
 
 		// remap height value from (0, maxHeight) to (0, 255)
 		float heightRemapped = (height + randVal) * (255.f / maxHeight);
 
 		// TODO: replace with clamp function
-		if (heightRemapped > 255) {
+		if (heightRemapped > 255)
+		{
 			heightRemapped = 255;
 		}
-		if (heightRemapped < 0) {
+		if (heightRemapped < 0) 
+		{
 			heightRemapped = 0;
 		}
 
@@ -230,35 +238,60 @@ Image Graph::run(short weightFunction)
 void Graph::setDetailMaps(std::vector<std::string> detailMapsFilenames) {
 	for (int i = 0; i < detailMapsFilenames.size(); i++) 
 	{
-		if (detailMapsFilenames[i] != "") {
+		if (detailMapsFilenames[i] != "")
+		{
 			const char* detailMapFilename = (detailMapsFilenames[i]).c_str();
-			CImg<unsigned char> detailMap(detailMapFilename);
-			detailMap.save("C:\\Users\\caroline\\Documents\\CIS_660_windows\\CImg_detailMapLoadTest.bmp");
 
-			this->detailMaps.push_back(detailMap);
+			try 
+			{
+				CImg<unsigned char> detailMap(detailMapFilename);
+				detailMap.resize(xDim, yDim);
+				detailMap.save("C:\\Users\\caroline\\Documents\\CIS_660_windows\\TerrainShaperNode\\Images\\CImg_detailMapLoadTest.bmp");
+				this->detailMaps.push_back(detailMap);
+			}
+			catch (...) 
+			{
+				// TODO
+			}
+
 		}
 	}
 }
 
 void Graph::setStartPointsMap(std::string startPointsFilename)
 {
-	if (startPointsFilename != "") {
+	if (startPointsFilename != "") 
+	{
 		const char* startPointsFilenameChar = startPointsFilename.c_str();
-		CImg<unsigned char> startPointsImage(startPointsFilenameChar);
-		startPointsImage.save("C:\\Users\\caroline\\Documents\\CIS_660_windows\\CImg_startPointsLoadTest.bmp");
 
-		cimg_forXY(startPointsImage, x, y) {
-			int r = (int)startPointsImage(x, y, 0, 0);
-			int g = (int)startPointsImage(x, y, 0, 1);
-			int b = (int)startPointsImage(x, y, 0, 2);
-			if (r == 0 && b == 0 && g == 0) {
-				startPoints.push_back(std::pair<int, int>(x, y));
+		try 
+		{
+			CImg<unsigned char> startPointsImage(startPointsFilenameChar);
+			startPointsImage.save("C:\\Users\\caroline\\Documents\\CIS_660_windows\\TerrainShaperNode\\Images\\CImg_startPointsLoadTestBEFORE.bmp");
+
+			startPointsImage.resize(xDim, yDim);
+			startPointsImage.save("C:\\Users\\caroline\\Documents\\CIS_660_windows\\TerrainShaperNode\\Images\\CImg_startPointsLoadTest.bmp");
+
+			cimg_forXY(startPointsImage, x, y) 
+			{
+				int r = (int)startPointsImage(x, y, 0, 0);
+				int g = (int)startPointsImage(x, y, 0, 1);
+				int b = (int)startPointsImage(x, y, 0, 2);
+				if (r == 0 && b == 0 && g == 0)
+				{
+					startPoints.push_back(std::pair<int, int>(x, y));
+				}
 			}
+		}
+		catch (...) 
+		{
+			// TODO
 		}
 	}
 }
 
-void Graph::setNumStartPoints(int numStartPoints) {
+void Graph::setNumStartPoints(int numStartPoints) 
+{
 	this->numStartPoints = numStartPoints;
 }
 

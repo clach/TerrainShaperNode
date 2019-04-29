@@ -45,7 +45,7 @@ public:
 	static MObject numStartPoints;
 	static MObject strength;
 
-	Image runAlgorithm(short weightFunction, std::vector<std::string> inDetailMapFilenames, 
+	Image runAlgorithm(int numSubdivisions, short weightFunction, std::vector<std::string> inDetailMapFilenames, 
 		std::string inStartPointsFilenames, int numStartPoints);
 	
 

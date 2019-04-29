@@ -86,20 +86,21 @@ MStatus TerrainShaperNode::initialize()
 }
 
 MStatus TerrainShaperNode::deform(MDataBlock& data, MItGeometry& itGeo,
-	const MMatrix &localToWorldMatrix, unsigned int mIndex) {
+	const MMatrix &localToWorldMatrix, unsigned int mIndex)
+{
 	MStatus returnStatus;
 
 	// get input
 
-	// Get the envelope
+	// get the envelope
 	float env = data.inputValue(envelope).asFloat();
 
-	// det weight function
+	// get weight function
 	MDataHandle weightFunctionData = data.inputValue(weightFunction, &returnStatus);
 	McheckErr(returnStatus, "ERROR getting weight function data handle\n");
 	short weightFunctionVal = weightFunctionData.asShort();
 
-	// det detail map
+	// get detail map
 	MDataHandle detailMapData = data.inputValue(detailMap, &returnStatus);
 	McheckErr(returnStatus, "ERROR getting detail map data handle\n");
 	MString detailMapFilename = detailMapData.asString();
@@ -121,12 +122,10 @@ MStatus TerrainShaperNode::deform(MDataBlock& data, MItGeometry& itGeo,
 
 	// create height map
 	int numVertices = itGeo.exactCount();
-	int numSubdivisions = ceil(sqrt(numVertices));
+	int numSubdivisions = ceil(sqrt(numVertices)); // gently assume geometry is square plane
 	std::vector<std::string> detailMaps;
 	detailMaps.push_back(detailMapFilename.asChar());
-	Image heightMap = runAlgorithm(weightFunctionVal, detailMaps, startPointsMapFilename.asChar(), numStartPointsVal);
-
-	heightMap.resize(numSubdivisions, numSubdivisions);
+	Image heightMap = runAlgorithm(numSubdivisions, weightFunctionVal, detailMaps, startPointsMapFilename.asChar(), numStartPointsVal);
 
 	// save height map as image
 	heightMap.save("C:\\Users\\caroline\\Documents\\CIS_660_windows\\TerrainShaperNode\\Images\\OutHeightMapAFTER.bmp");
@@ -135,7 +134,8 @@ MStatus TerrainShaperNode::deform(MDataBlock& data, MItGeometry& itGeo,
 	std::vector<float> heightsVector;
 	float weightedStrength = strengthVal / 255.f;
 	// fill point array with height values from height map
-	cimg_forXY(heightMap, x, y) {
+	cimg_forXY(heightMap, x, y)
+	{
 		int r = (int)heightMap(x, y, 0, 0);
 		int g = (int)heightMap(x, y, 0, 1);
 		int b = (int)heightMap(x, y, 0, 2);
@@ -145,7 +145,8 @@ MStatus TerrainShaperNode::deform(MDataBlock& data, MItGeometry& itGeo,
 	}
 
 	MPoint pt;
-	for (; !itGeo.isDone(); itGeo.next()) {
+	for (; !itGeo.isDone(); itGeo.next()) 
+	{
 		// get the input point
 		pt = itGeo.position();
 
@@ -160,12 +161,11 @@ MStatus TerrainShaperNode::deform(MDataBlock& data, MItGeometry& itGeo,
 	return MS::kSuccess;
 }
 
-Image TerrainShaperNode::runAlgorithm(short weightFunction, std::vector<std::string> inDetailMapFilenames, 
-	std::string inStartPointsFilenames,
-	int numStartPoints) {
+Image TerrainShaperNode::runAlgorithm(int numSubdivisions, short weightFunction, std::vector<std::string> inDetailMapFilenames, 
+	std::string inStartPointsFilenames, int numStartPoints) 
+{
 	// run algorithm and display height map
-	//Graph g = Graph(exactCount, exactCount);
-	Graph g = Graph(512, 512);
+	Graph g = Graph(numSubdivisions, numSubdivisions);
 	g.setDetailMaps(inDetailMapFilenames);
 	g.setStartPointsMap(inStartPointsFilenames);
 	g.setNumStartPoints(numStartPoints);
