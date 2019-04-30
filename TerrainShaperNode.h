@@ -43,9 +43,10 @@ public:
 	static MObject detailMap;
 	static MObject startPointsMap;
 	static MObject numStartPoints;
-	static MObject strength;
+	static MObject maxHeight;
+	static MObject steepness;
 
-	Image runAlgorithm(int numSubdivisions, short weightFunction, std::vector<std::string> inDetailMapFilenames, 
+	Image runAlgorithm(int numSubdivisions, short weightFunction, float steepness, std::vector<std::string> inDetailMapFilenames, 
 		std::string inStartPointsFilenames, int numStartPoints);
 	
 

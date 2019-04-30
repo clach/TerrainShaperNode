@@ -2,7 +2,7 @@
 #include <functional> 
 
 Graph::Graph(int x, int y) : numSubdivisions(x), xDim(x), yDim(y), maxHeight((1000.f / 512.f) * (float)x), detailMaps(std::vector<Image>()),
-	startPoints(std::vector<std::pair<int, int>>())
+	startPoints(std::vector<std::pair<int, int>>()), steepness(0.005)
 {
 	cimg::exception_mode(0); // quiet cimg exceptions
 }
@@ -10,67 +10,129 @@ Graph::Graph(int x, int y) : numSubdivisions(x), xDim(x), yDim(y), maxHeight((10
 Graph::~Graph()
 {}
 
-// most basic weight function, returns float between (lo, hi)
+// clamps val between lo and hi
+float clamp(float val, float lo, float hi) {
+	if (val < lo) {
+		return lo;
+	}
+	if (val > hi) {
+		return hi;
+	}
+	return val;
+}
+
+// returns float between (lo, hi)
 float randRange(float lo, float hi)
 {
 	return lo + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / (hi - lo)));
 }
 
-// weight function using pixel value of detail map
-float Graph::weightFunctionWithMaps(int x, int y)
-{
+// returns value from [0, 255], gets average pixel value of detail maps at pixel (x, y)
+float Graph::getDetailMapValue(int x, int y) {
+	float height = 0;
 	if (!detailMaps.empty())
 	{
-		float heightSum = 0;
 		for (int i = 0; i < detailMaps.size(); i++)
 		{
 			int r = (int)(detailMaps[i])(x, y, 0, 0);
 			int g = (int)(detailMaps[i])(x, y, 0, 1);
 			int b = (int)(detailMaps[i])(x, y, 0, 2);
-			heightSum += 0.21 * r + 0.72 * g + 0.07 * b;
+			height += 0.21 * r + 0.72 * g + 0.07 * b;
 		}
 
-		float weight = 0.005;
-		float avgHeight =  weight * randRange(5, 50) * heightSum / detailMaps.size();
-
-		return avgHeight;
+		height /= detailMaps.size();
 	}
-	else {
-		return randRange(5, 50);
-	}
-
+	return height;
 }
 
+// weight function using pixel value of detail map (if not detail maps, use random value)
+float Graph::weightFunctionNoise(int x, int y)
+{
+	if (!detailMaps.empty())
+	{
+		float height = getDetailMapValue(x, y);
+		height *= steepness;
+		return height;
+	}
+	else
+	{
+		return steepness * randRange(0, 255);
+	}
+}
+
+
 // weight function to create dunes
-float Graph::weightFunctionDunes(int x1, int y1, int x2, int y2)
+float Graph::weightFunctionDunes(Node const * const currNode, Node const * const childNode)
 {
 	float deltaMin = 5.0;
 	float deltaMax = 50.0;
 
-	float windWeight = weightFunctionWithMaps(x1, y1);
+	float windWeight = weightFunctionNoise(currNode->coords.first, currNode->coords.second);
 
-	std::vector<float> windDir = { 1, 0, 0 };
-	std::vector<float> dist = { float(x1 - x2), float(y1 - y2), 0 };
+	const vec2 windDir = vec2(1, 0); // random vector on circle with length of 1
+	vec2 dist = vec2(currNode->coords.first - childNode->coords.first, 
+					 currNode->coords.second - childNode->coords.second);
 
-	float dot = windDir[0] * dist[0] + windDir[1] * dist[1] + windDir[2] * dist[2];
+	float dot = Dot(windDir, dist);
 	dot = (dot + 1.0f) / 2.0f; // remap from (-1, 1) to (0, 1)
 	dot = (dot * (deltaMax - deltaMin)) + deltaMin; // remap from (0, 1) to (deltaMin, deltaMax)
 	dot *= windWeight;
 
 	dot /= 50;
-
-	if (dot <= 0)
-	{
-		std::cout << dot << "\n";
-		return 0.f;
-	}
-	if (dot >= maxHeight)
-	{
-		std::cout << dot << "\n";
-		return maxHeight;
-	}
+	dot = clamp(dot, 0, maxHeight);
 
 	return dot;
+}
+
+// weight function to create dunes
+float Graph::weightFunctionDunes2(Node const * const initalFeatureNode, Node const * const currNode, Node const * const childNode)
+{
+	const float heightMultiplier = 1.0;
+	const float featureScale = 5.0;
+	const vec2 windDir = vec2(1, 0); // random vector on circle with length of 1
+	vec2 dist = vec2(initalFeatureNode->coords.first - childNode->coords.first, 
+		initalFeatureNode->coords.second - childNode->coords.second).Normalize(); //get direction to current point.
+
+	float height = pow(0.25f * (1.1f + 0.5f * Dot(dist, windDir)), 0.75f) * max(currNode->height, 0.f);
+
+	return height * heightMultiplier / featureScale;
+}
+
+// weight function to create canyons
+float Graph::weightFunctionCanyons(Node const * const initialFeatureNode, Node const * const currNode, 
+	Node* const childNode)
+{
+	const float heightMultiplier = 1.0;
+	const int numTerraces = 5; // how many levels of terraces should be in our canyon
+
+	float dh = 0.1f * clamp(heightMultiplier * getDetailMapValue(currNode->coords.first, currNode->coords.second) / 255.f, 0, 1) * 4.f;
+
+	float t = initialFeatureNode->height;
+	
+	float phi = 0.9;
+	while (t >= currNode->height) 
+	{
+		t *= phi; //actually, you can optimize that by using `log` function
+	}
+	t = max(t, 0.05f);
+	float height = 0;
+
+	if (ceil(currNode->pathLength * numTerraces) != ceil((currNode->pathLength + dh) * numTerraces))
+	{
+		height = (currNode->height - t) * 1.01f;
+	}
+	else
+	{
+		height = 0;
+	}
+
+	//check if we should update pathLegnth if using the new value for childNode
+	if (currNode->height - height * 1.05f > childNode->height) 
+	{ 
+		childNode->pathLength = currNode->pathLength + dh;
+	}
+	return height;
+
 }
 
 // sorts nodes by height, from tallest to shortest heights
@@ -108,6 +170,9 @@ std::vector<std::vector<float>> Graph::shortestPath(short weightFunction, std::v
 		Node* n = new Node(*(nodes[startCoords[i].first][startCoords[i].second]));
 		// assign some height between maxHeight/2 and maxHeight
 		float height = maxHeight / 2.f + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / (maxHeight - maxHeight / 2.f)));
+		if (true) {
+			height += getDetailMapValue(startCoords[i].first, startCoords[i].second);
+		}
 		n->height = height;
 		queue.push(n);
 
@@ -135,6 +200,14 @@ std::vector<std::vector<float>> Graph::shortestPath(short weightFunction, std::v
 				if (!(x == n->coords.first && y == n->coords.second))
 				{
 					Node* neighbor = nodes[x][y];
+					if (n->initialNode == nullptr) 
+					{
+						// if n is an initial feature point, tell its children
+						neighbor->initialNode = n;
+					}
+					else {
+						neighbor->initialNode = n->initialNode;
+					}
 					
 					if (!neighbor->processed)
 					{
@@ -146,10 +219,28 @@ std::vector<std::vector<float>> Graph::shortestPath(short weightFunction, std::v
 						switch ((int)weightFunction)
 						{
 						case 0:
-							weight = weightFunctionWithMaps(x, y);
+							weight = weightFunctionNoise(x, y);
 							break;
 						case 1:
-							weight = weightFunctionDunes(neighbor->coords.first, neighbor->coords.first, n->coords.first, n->coords.first);
+							weight = weightFunctionDunes(n, neighbor);
+							break;
+						case 2:
+							if (n->initialNode == nullptr)
+							{
+								weight = weightFunctionDunes2(n, n, neighbor);
+							}
+							else {
+								weight = weightFunctionDunes2(n->initialNode, n, neighbor);
+							}
+							break;
+						case 3:
+							if (n->initialNode == nullptr)
+							{
+								weight = weightFunctionCanyons(n, n, neighbor);
+							}
+							else {
+								weight = weightFunctionCanyons(n->initialNode, n, neighbor);
+							}
 							break;
 						}
 
@@ -215,18 +306,9 @@ Image Graph::run(short weightFunction)
 		float randVal = lo + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / (hi - lo)));
 		randVal = (randVal / 512.f) * (float)numSubdivisions;
 
-		// remap height value from (0, maxHeight) to (0, 255)
-		float heightRemapped = (height + randVal) * (255.f / maxHeight);
-
-		// TODO: replace with clamp function
-		if (heightRemapped > 255)
-		{
-			heightRemapped = 255;
-		}
-		if (heightRemapped < 0) 
-		{
-			heightRemapped = 0;
-		}
+		// remap height value from [-maxHeight, maxHeight] to [0, 255]
+		float heightRemapped = ((height + randVal) + maxHeight) * (255.f / (2.f * maxHeight));
+		heightRemapped = clamp(heightRemapped, 0, 255);
 
 		const float color[] = { heightRemapped, heightRemapped, heightRemapped };
 		heightMap.draw_point(x, y, color);
@@ -294,5 +376,11 @@ void Graph::setNumStartPoints(int numStartPoints)
 {
 	this->numStartPoints = numStartPoints;
 }
+
+void Graph::setSteepness(float steepness) 
+{
+	this->steepness = steepness;
+}
+
 
 

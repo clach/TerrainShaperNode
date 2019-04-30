@@ -17,8 +17,10 @@ typedef std::pair<int, int> Point;
 class Node
 {
 public:
-	Node(int x, int y) : processed(false), coords(Point(x, y)), height(0) {}
-	Node(const Node& n) : processed(n.processed), coords(n.coords), height(n.height) {}
+	Node(int x, int y) : processed(false), coords(Point(x, y)), initialNode(nullptr), height(0), pathLength(1.f)
+	{}
+	Node(const Node& n) : processed(n.processed), coords(n.coords), initialNode(n.initialNode), height(n.height), pathLength(n.pathLength)
+	{}
 
 	void operator=(Node n) {
 		this->coords = n.coords;
@@ -28,7 +30,9 @@ public:
 
 	bool processed;
 	std::pair<int, int> coords;
+	Node* initialNode;
 	float height;
+	float pathLength;
 
 };
 
@@ -45,12 +49,19 @@ public:
 	void setDetailMaps(std::vector<std::string> detailMapsFilenames);
 	void setStartPointsMap(std::string startPointsFilenames);
 	void setNumStartPoints(int numStartPoints);
+	void setSteepness(float steepness);
 
 protected:
 	std::vector<std::vector<float>> shortestPath(short weightFunction, std::vector<Point> startCoords);
 
-	float weightFunctionWithMaps(int x, int y);
-	float weightFunctionDunes(int x1, int y1, int x2, int y2);
+	float getDetailMapValue(int x, int y);
+
+	float weightFunctionNoise(int x, int y);
+	float weightFunctionDunes(Node const * const currNode, Node const * const childNode);
+	float weightFunctionDunes2(Node const * const initalFeatureNodeNode, Node const * const currNode, 
+		Node const * const childNode);
+	float weightFunctionCanyons(Node const * const initialFeatureNode, Node const * const currNode, 
+		Node* const childNode);
 
 	std::vector<Image> detailMaps;
 	std::vector<Point> startPoints;
@@ -64,9 +75,9 @@ protected:
 
 	int numSubdivisions;
 
-	// maximum height of any grid coordinate
-	// (all start coords will have max height)
 	float maxHeight;
+
+	float steepness;
 
 	int numStartPoints;
 
