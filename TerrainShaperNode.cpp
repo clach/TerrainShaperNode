@@ -14,6 +14,7 @@ MObject TerrainShaperNode::startPointsMap;
 MObject TerrainShaperNode::numStartPoints;
 MObject TerrainShaperNode::maxHeight;
 MObject TerrainShaperNode::steepness;
+MObject TerrainShaperNode::additiveDetailMap;
 MTypeId TerrainShaperNode::id(0x80000);
 
 void* TerrainShaperNode::creator()
@@ -23,41 +24,45 @@ void* TerrainShaperNode::creator()
 
 MStatus TerrainShaperNode::initialize()
 {
-	MFnEnumAttribute inputWeightFunctionAttr;
-	MFnTypedAttribute inputDetailMapAttr;
-	MFnTypedAttribute inputStartPointsMapAttr;
-	MFnNumericAttribute inputNumStartPointsAttr;
-	MFnNumericAttribute inputMaxHeightAttr;
-	MFnNumericAttribute inputSteepnessAttr;
+	MFnEnumAttribute inWeightFunctionAttr;
+	MFnTypedAttribute inDetailMapAttr;
+	MFnTypedAttribute inStartPointsMapAttr;
+	MFnNumericAttribute inNumStartPointsAttr;
+	MFnNumericAttribute inMaxHeightAttr;
+	MFnNumericAttribute inSteepnessAttr;
+	MFnNumericAttribute inAdditiveDetailMapAttr;
 
 	MStatus returnStatus;
 
 	// create input/output attributes
-	TerrainShaperNode::weightFunction = inputWeightFunctionAttr.create("weightFunction", "wf", 0);
+	TerrainShaperNode::weightFunction = inWeightFunctionAttr.create("weightFunction", "wf", 0);
 	McheckErr(returnStatus, "ERROR creating TerrainShaperNode weight function attribute\n");
-	returnStatus = inputWeightFunctionAttr.addField("Basic", 0);
+	returnStatus = inWeightFunctionAttr.addField("Basic", 0);
 	McheckErr(returnStatus, "ERROR creating TerrainShaperNode weight function enum type basic\n");
-	returnStatus = inputWeightFunctionAttr.addField("Dunes", 1);
+	returnStatus = inWeightFunctionAttr.addField("Dunes", 1);
 	McheckErr(returnStatus, "ERROR creating TerrainShaperNode weight function enum type dunes\n");
-	returnStatus = inputWeightFunctionAttr.addField("Dunes2", 2);
+	returnStatus = inWeightFunctionAttr.addField("Dunes2", 2);
 	McheckErr(returnStatus, "ERROR creating TerrainShaperNode weight function enum type dunes2\n");
-	returnStatus = inputWeightFunctionAttr.addField("Canyons", 3);
+	returnStatus = inWeightFunctionAttr.addField("Canyons", 3);
 	McheckErr(returnStatus, "ERROR creating TerrainShaperNode weight function enum type canyon\n");
 
-	TerrainShaperNode::detailMap = inputDetailMapAttr.create("detailMap", "dm", MFnData::kString, 0);
+	TerrainShaperNode::detailMap = inDetailMapAttr.create("detailMap", "dm", MFnData::kString, 0);
 	McheckErr(returnStatus, "ERROR creating TerrainShaperNode detail map attribute\n");
 
-	TerrainShaperNode::startPointsMap = inputStartPointsMapAttr.create("startPointsMap", "spm", MFnData::kString, 0);
+	TerrainShaperNode::startPointsMap = inStartPointsMapAttr.create("startPointsMap", "spm", MFnData::kString, 0);
 	McheckErr(returnStatus, "ERROR creating TerrainShaperNode start points map attribute\n");
 
-	TerrainShaperNode::numStartPoints = inputNumStartPointsAttr.create("numberStartPoints", "nsp", MFnNumericData::kInt, 5);
+	TerrainShaperNode::numStartPoints = inNumStartPointsAttr.create("numberStartPoints", "nsp", MFnNumericData::kInt, 5);
 	McheckErr(returnStatus, "ERROR creating TerrainShaperNode number of start points attribute\n");
 
-	TerrainShaperNode::maxHeight = inputMaxHeightAttr.create("maxHeight", "mh", MFnNumericData::kFloat, 5);
+	TerrainShaperNode::maxHeight = inMaxHeightAttr.create("maxHeight", "mh", MFnNumericData::kFloat, 5);
 	McheckErr(returnStatus, "ERROR creating TerrainShaperNode max height attribute\n");
 	
-	TerrainShaperNode::steepness = inputSteepnessAttr.create("steepness", "s", MFnNumericData::kFloat, 0.005);
+	TerrainShaperNode::steepness = inSteepnessAttr.create("steepness", "s", MFnNumericData::kFloat, 0.5);
 	McheckErr(returnStatus, "ERROR creating TerrainShaperNode steepness attribute\n");
+
+	TerrainShaperNode::additiveDetailMap = inAdditiveDetailMapAttr.create("additiveDetailMap", "adm", MFnNumericData::kBoolean, 0);
+	McheckErr(returnStatus, "ERROR creating TerrainShaperNode additive detail map attribute\n");
 
 	// add attributes
 	returnStatus = addAttribute(TerrainShaperNode::weightFunction);
@@ -78,6 +83,9 @@ MStatus TerrainShaperNode::initialize()
 	returnStatus = addAttribute(TerrainShaperNode::steepness);
 	McheckErr(returnStatus, "ERROR adding steepness attribute\n");
 
+	returnStatus = addAttribute(TerrainShaperNode::additiveDetailMap);
+	McheckErr(returnStatus, "ERROR adding additive detail map attribute\n");
+
 	// attribute effects
 	returnStatus = attributeAffects(TerrainShaperNode::weightFunction, TerrainShaperNode::outputGeom);
 	McheckErr(returnStatus, "ERROR in attributeAffects for weight function\n");
@@ -96,6 +104,9 @@ MStatus TerrainShaperNode::initialize()
 
 	returnStatus = attributeAffects(TerrainShaperNode::steepness, TerrainShaperNode::outputGeom);
 	McheckErr(returnStatus, "ERROR in attributeAffects for steepness\n");
+
+	returnStatus = attributeAffects(TerrainShaperNode::additiveDetailMap, TerrainShaperNode::outputGeom);
+	McheckErr(returnStatus, "ERROR in attributeAffects for additive detail map\n");
 
 	return MS::kSuccess;
 }
@@ -140,12 +151,18 @@ MStatus TerrainShaperNode::deform(MDataBlock& data, MItGeometry& itGeo,
 	McheckErr(returnStatus, "ERROR getting steepness data handle\n");
 	float steepnessVal = steepnessData.asFloat();
 
+	// get additive detail map
+	MDataHandle additiveDetailMapData = data.inputValue(additiveDetailMap, &returnStatus);
+	McheckErr(returnStatus, "ERROR getting additive detail map data handle\n");
+	bool additiveDetailMapVal = additiveDetailMapData.asBool();
+
 	// create height map
 	int numVertices = itGeo.exactCount();
 	int numSubdivisions = ceil(sqrt(numVertices)); // gently assume geometry is square plane
 	std::vector<std::string> detailMaps;
 	detailMaps.push_back(detailMapFilename.asChar());
-	Image heightMap = runAlgorithm(numSubdivisions, weightFunctionVal, steepnessVal, detailMaps, startPointsMapFilename.asChar(), numStartPointsVal);
+	Image heightMap = runAlgorithm(numSubdivisions, weightFunctionVal, steepnessVal, additiveDetailMapVal, 
+		detailMaps, startPointsMapFilename.asChar(), numStartPointsVal);
 
 	// save height map as image
 	heightMap.save("C:\\Users\\caroline\\Documents\\CIS_660_windows\\TerrainShaperNode\\Images\\OutHeightMapAFTER.bmp");
@@ -181,9 +198,8 @@ MStatus TerrainShaperNode::deform(MDataBlock& data, MItGeometry& itGeo,
 	return MS::kSuccess;
 }
 
-Image TerrainShaperNode::runAlgorithm(int numSubdivisions, short weightFunction, float steepness,
-	std::vector<std::string> inDetailMapFilenames, 
-	std::string inStartPointsFilenames, int numStartPoints) 
+Image TerrainShaperNode::runAlgorithm(int numSubdivisions, short weightFunction, float steepness, bool additiveDetailMap,
+	std::vector<std::string> inDetailMapFilenames, std::string inStartPointsFilenames, int numStartPoints) 
 {
 	// run algorithm and display height map
 	Graph g = Graph(numSubdivisions, numSubdivisions);
@@ -191,6 +207,7 @@ Image TerrainShaperNode::runAlgorithm(int numSubdivisions, short weightFunction,
 	g.setStartPointsMap(inStartPointsFilenames);
 	g.setNumStartPoints(numStartPoints);
 	g.setSteepness(steepness);
+	g.setAdditiveDetailMap(additiveDetailMap);
 	Image heightMap = g.run(weightFunction);
 
 	heightMap.save("C:\\Users\\caroline\\Documents\\CIS_660_windows\\TerrainShaperNode\\Images\\OutHeightMapBEFORE.bmp");

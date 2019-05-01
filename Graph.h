@@ -50,6 +50,7 @@ public:
 	void setStartPointsMap(std::string startPointsFilenames);
 	void setNumStartPoints(int numStartPoints);
 	void setSteepness(float steepness);
+	void setAdditiveDetailMap(bool additive);
 
 protected:
 	std::vector<std::vector<float>> shortestPath(short weightFunction, std::vector<Point> startCoords);
@@ -74,11 +75,9 @@ protected:
 	int yDim;
 
 	int numSubdivisions;
-
 	float maxHeight;
-
 	float steepness;
-
 	int numStartPoints;
+	bool additiveDetailMap;
 
 };

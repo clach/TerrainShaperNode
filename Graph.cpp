@@ -64,8 +64,8 @@ float Graph::weightFunctionNoise(int x, int y)
 // weight function to create dunes
 float Graph::weightFunctionDunes(Node const * const currNode, Node const * const childNode)
 {
-	float deltaMin = 5.0;
-	float deltaMax = 50.0;
+	const float deltaMin = 5.0;
+	const float deltaMax = 50.0;
 
 	float windWeight = weightFunctionNoise(currNode->coords.first, currNode->coords.second);
 
@@ -79,7 +79,7 @@ float Graph::weightFunctionDunes(Node const * const currNode, Node const * const
 	dot *= windWeight;
 
 	dot /= 50;
-	dot = clamp(dot, 0, maxHeight);
+	//dot = clamp(dot, 0, maxHeight);
 
 	return dot;
 }
@@ -87,36 +87,30 @@ float Graph::weightFunctionDunes(Node const * const currNode, Node const * const
 // weight function to create dunes
 float Graph::weightFunctionDunes2(Node const * const initalFeatureNode, Node const * const currNode, Node const * const childNode)
 {
-	const float heightMultiplier = 1.0;
-	const float featureScale = 5.0;
-	const vec2 windDir = vec2(1, 0); // random vector on circle with length of 1
+	const vec2 windDir = vec2(randRange(0, 10), randRange(0, 10)).Normalize(); // random vector on circle with length of 1
 	vec2 dist = vec2(initalFeatureNode->coords.first - childNode->coords.first, 
 		initalFeatureNode->coords.second - childNode->coords.second).Normalize(); //get direction to current point.
 
 	float height = pow(0.25f * (1.1f + 0.5f * Dot(dist, windDir)), 0.75f) * max(currNode->height, 0.f);
 
-	return height * heightMultiplier / featureScale;
+	return steepness * height;
 }
 
 // weight function to create canyons
 float Graph::weightFunctionCanyons(Node const * const initialFeatureNode, Node const * const currNode, 
 	Node* const childNode)
 {
-	const float heightMultiplier = 1.0;
 	const int numTerraces = 5; // how many levels of terraces should be in our canyon
-
-	float dh = 0.1f * clamp(heightMultiplier * getDetailMapValue(currNode->coords.first, currNode->coords.second) / 255.f, 0, 1) * 4.f;
-
+	float dh = 0.1f * clamp(getDetailMapValue(currNode->coords.first, currNode->coords.second) / 255.f, 0, 1) * 4.f;
 	float t = initialFeatureNode->height;
 	
-	float phi = 0.9;
+	float phi = 0.9f;
 	while (t >= currNode->height) 
 	{
 		t *= phi; //actually, you can optimize that by using `log` function
 	}
-	t = max(t, 0.05f);
-	float height = 0;
 
+	float height = 0;
 	if (ceil(currNode->pathLength * numTerraces) != ceil((currNode->pathLength + dh) * numTerraces))
 	{
 		height = (currNode->height - t) * 1.01f;
@@ -169,9 +163,11 @@ std::vector<std::vector<float>> Graph::shortestPath(short weightFunction, std::v
 	{
 		Node* n = new Node(*(nodes[startCoords[i].first][startCoords[i].second]));
 		// assign some height between maxHeight/2 and maxHeight
-		float height = maxHeight / 2.f + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / (maxHeight - maxHeight / 2.f)));
-		if (true) {
-			height += getDetailMapValue(startCoords[i].first, startCoords[i].second);
+		float height = randRange(maxHeight / 2.f, maxHeight);
+		if (additiveDetailMap && !detailMaps.empty()) {
+			// TODO
+			//height += getDetailMapValue(startCoords[i].first, startCoords[i].second);
+			//height *= (maxHeight / (maxHeight + 255.f)); // remap height back to [0, 1000]
 		}
 		n->height = height;
 		queue.push(n);
@@ -381,6 +377,11 @@ void Graph::setSteepness(float steepness)
 {
 	this->steepness = steepness;
 }
+
+void Graph::setAdditiveDetailMap(bool additive) {
+	this->additiveDetailMap = additive;
+}
+
 
 
 
