@@ -41,8 +41,8 @@ MStatus TerrainShaperNode::initialize()
 	McheckErr(returnStatus, "ERROR creating TerrainShaperNode weight function enum type basic\n");
 	returnStatus = inWeightFunctionAttr.addField("Dunes", 1);
 	McheckErr(returnStatus, "ERROR creating TerrainShaperNode weight function enum type dunes\n");
-	returnStatus = inWeightFunctionAttr.addField("Dunes2", 2);
-	McheckErr(returnStatus, "ERROR creating TerrainShaperNode weight function enum type dunes2\n");
+	returnStatus = inWeightFunctionAttr.addField("Peaks", 2);
+	McheckErr(returnStatus, "ERROR creating TerrainShaperNode weight function enum type peaks\n");
 	returnStatus = inWeightFunctionAttr.addField("Canyons", 3);
 	McheckErr(returnStatus, "ERROR creating TerrainShaperNode weight function enum type canyon\n");
 
@@ -111,6 +111,13 @@ MStatus TerrainShaperNode::initialize()
 	return MS::kSuccess;
 }
 
+string ExePath() {
+	char buffer[MAX_PATH];
+	GetModuleFileName(NULL, buffer, MAX_PATH);
+	string::size_type pos = string(buffer).find_last_of("\\/");
+	return string(buffer).substr(0, pos);
+}
+
 MStatus TerrainShaperNode::deform(MDataBlock& data, MItGeometry& itGeo,
 	const MMatrix &localToWorldMatrix, unsigned int mIndex)
 {
@@ -165,7 +172,14 @@ MStatus TerrainShaperNode::deform(MDataBlock& data, MItGeometry& itGeo,
 		detailMaps, startPointsMapFilename.asChar(), numStartPointsVal);
 
 	// save height map as image
-	heightMap.save("C:\\Users\\caroline\\Documents\\CIS_660_windows\\TerrainShaperNode\\Images\\OutHeightMapAFTER.bmp");
+	try {
+		std::string exePath = ExePath();
+		heightMap.save("C:\\Users\\caroline\\Documents\\CIS_660_windows\\TerrainShaperNode\\Images\\outHeightMap.bmp");
+	}
+	catch (...)
+	{
+		// TODO
+	}
 
 	// TODO: can probably combine these two following blocks of code
 	std::vector<float> heightsVector;
@@ -209,8 +223,6 @@ Image TerrainShaperNode::runAlgorithm(int numSubdivisions, short weightFunction,
 	g.setSteepness(steepness);
 	g.setAdditiveDetailMap(additiveDetailMap);
 	Image heightMap = g.run(weightFunction);
-
-	heightMap.save("C:\\Users\\caroline\\Documents\\CIS_660_windows\\TerrainShaperNode\\Images\\OutHeightMapBEFORE.bmp");
 
 	return heightMap;
 }

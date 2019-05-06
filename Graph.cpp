@@ -60,6 +60,21 @@ float Graph::weightFunctionNoise(int x, int y)
 	}
 }
 
+// weight function using pixel value of detail map (if not detail maps, use random value)
+float Graph::weightFunctionFlat(int x, int y)
+{
+	if (!detailMaps.empty())
+	{
+		float height = getDetailMapValue(x, y);
+		height *= steepness;
+		return height;
+	}
+	else
+	{
+		return steepness * randRange(0, 255);
+	}
+}
+
 
 // weight function to create dunes
 float Graph::weightFunctionDunes(Node const * const currNode, Node const * const childNode)
@@ -85,7 +100,7 @@ float Graph::weightFunctionDunes(Node const * const currNode, Node const * const
 }
 
 // weight function to create dunes
-float Graph::weightFunctionDunes2(Node const * const initalFeatureNode, Node const * const currNode, Node const * const childNode)
+float Graph::weightFunctionPeaks(Node const * const initalFeatureNode, Node const * const currNode, Node const * const childNode)
 {
 	const vec2 windDir = vec2(randRange(0, 10), randRange(0, 10)).Normalize(); // random vector on circle with length of 1
 	vec2 dist = vec2(initalFeatureNode->coords.first - childNode->coords.first, 
@@ -223,10 +238,10 @@ std::vector<std::vector<float>> Graph::shortestPath(short weightFunction, std::v
 						case 2:
 							if (n->initialNode == nullptr)
 							{
-								weight = weightFunctionDunes2(n, n, neighbor);
+								weight = weightFunctionPeaks(n, n, neighbor);
 							}
 							else {
-								weight = weightFunctionDunes2(n->initialNode, n, neighbor);
+								weight = weightFunctionPeaks(n->initialNode, n, neighbor);
 							}
 							break;
 						case 3:
@@ -324,7 +339,7 @@ void Graph::setDetailMaps(std::vector<std::string> detailMapsFilenames) {
 			{
 				CImg<unsigned char> detailMap(detailMapFilename);
 				detailMap.resize(xDim, yDim);
-				detailMap.save("C:\\Users\\caroline\\Documents\\CIS_660_windows\\TerrainShaperNode\\Images\\CImg_detailMapLoadTest.bmp");
+				detailMap.save("C:\\Users\\caroline\\Documents\\CIS_660_windows\\TerrainShaperNode\\Images\\detailMapLoadTest.bmp");
 				this->detailMaps.push_back(detailMap);
 			}
 			catch (...) 
@@ -345,10 +360,9 @@ void Graph::setStartPointsMap(std::string startPointsFilename)
 		try 
 		{
 			CImg<unsigned char> startPointsImage(startPointsFilenameChar);
-			startPointsImage.save("C:\\Users\\caroline\\Documents\\CIS_660_windows\\TerrainShaperNode\\Images\\CImg_startPointsLoadTestBEFORE.bmp");
-
+			startPointsImage.save("C:\\Users\\caroline\\Documents\\CIS_660_windows\\TerrainShaperNode\\Images\\startPointsLoadTestBEFORE.bmp");
 			startPointsImage.resize(xDim, yDim);
-			startPointsImage.save("C:\\Users\\caroline\\Documents\\CIS_660_windows\\TerrainShaperNode\\Images\\CImg_startPointsLoadTest.bmp");
+			startPointsImage.save("C:\\Users\\caroline\\Documents\\CIS_660_windows\\TerrainShaperNode\\Images\\startPointsLoadTestAFTER.bmp");
 
 			cimg_forXY(startPointsImage, x, y) 
 			{

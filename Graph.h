@@ -1,12 +1,10 @@
 #pragma once
 
-//#include <bits/stdc++.h>
-
 #include <iostream>
-#include <list>
 #include <queue>
 #include <vec.h>
 
+//#define cimg_use_jpeg
 #include "CImg.h"
 
 using namespace cimg_library;
@@ -58,8 +56,9 @@ protected:
 	float getDetailMapValue(int x, int y);
 
 	float weightFunctionNoise(int x, int y);
+	float weightFunctionFlat(int x, int y);
 	float weightFunctionDunes(Node const * const currNode, Node const * const childNode);
-	float weightFunctionDunes2(Node const * const initalFeatureNodeNode, Node const * const currNode, 
+	float weightFunctionPeaks(Node const * const initalFeatureNodeNode, Node const * const currNode,
 		Node const * const childNode);
 	float weightFunctionCanyons(Node const * const initialFeatureNode, Node const * const currNode, 
 		Node* const childNode);
