@@ -48,6 +48,8 @@ public:
 	void setStartPointsMap(std::string startPointsFilenames);
 	void setNumStartPoints(int numStartPoints);
 	void setSteepness(float steepness);
+	void setWindDir(float x, float y);
+	void setNoise(int noise);
 	void setAdditiveDetailMap(bool additive);
 
 protected:
@@ -77,6 +79,8 @@ protected:
 	float maxHeight;
 	float steepness;
 	int numStartPoints;
+	float windDirX, windDirY;
+	int noise;
 	bool additiveDetailMap;
 
 };

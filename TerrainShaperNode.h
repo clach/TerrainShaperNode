@@ -28,7 +28,7 @@ public:
 	TerrainShaperNode() {}
 	virtual ~TerrainShaperNode() {}
 	static  void*	creator();
-	static  MStatus initialize();
+	static  MStatus initialize();	
 	virtual MStatus deform(MDataBlock& data, MItGeometry& itGeo,
 		const MMatrix &localToWorldMatrix, unsigned int mIndex);
 
@@ -41,10 +41,15 @@ public:
 	static MObject numStartPoints;
 	static MObject maxHeight;
 	static MObject steepness;
+	static MObject noise;
+	static MObject windDirX;
+	static MObject windDirY;
 	static MObject additiveDetailMap;
 
 	Image runAlgorithm(int numSubdivisions, short weightFunction, float steepness, bool additiveDetailMap,
-		std::vector<std::string> inDetailMapFilenames, std::string inStartPointsFilenames, int numStartPoints);
+		std::vector<std::string> inDetailMapFilenames, std::string inStartPointsFilenames, int numStartPoints,
+		float windDirX, float windDirY,
+		int noise);
 	
 
 };

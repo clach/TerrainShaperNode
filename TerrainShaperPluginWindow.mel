@@ -10,5 +10,9 @@ global proc Create_TerrainShaper_Node()
 
 }
 
-menu -label "TerrainShaper" -p MayaWindow;
+global string $tsMenu;
+if(`menu -exists $tsMenu`)
+	deleteUI $tsMenu;
+
+$tsMenu = `menu -label "TerrainShaper" -p MayaWindow`;
     menuItem -label "TerrainShaper Node" -c "Create_TerrainShaper_Node";

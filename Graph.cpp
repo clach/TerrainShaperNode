@@ -84,7 +84,7 @@ float Graph::weightFunctionDunes(Node const * const currNode, Node const * const
 
 	float windWeight = weightFunctionNoise(currNode->coords.first, currNode->coords.second);
 
-	const vec2 windDir = vec2(1, 0); // random vector on circle with length of 1
+	const vec2 windDir = vec2(windDirX, windDirY).Normalize(); // random vector on circle with length of 1
 	vec2 dist = vec2(currNode->coords.first - childNode->coords.first, 
 					 currNode->coords.second - childNode->coords.second);
 
@@ -141,7 +141,6 @@ float Graph::weightFunctionCanyons(Node const * const initialFeatureNode, Node c
 		childNode->pathLength = currNode->pathLength + dh;
 	}
 	return height;
-
 }
 
 // sorts nodes by height, from tallest to shortest heights
@@ -312,8 +311,8 @@ Image Graph::run(short weightFunction)
 		float height = heights[x][y];
 
 		// add some random value to avoid completely flat regions
-		float lo = -10;
-		float hi = 10;
+		float lo = -noise;
+		float hi = noise;
 		float randVal = lo + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / (hi - lo)));
 		randVal = (randVal / 512.f) * (float)numSubdivisions;
 
@@ -339,7 +338,7 @@ void Graph::setDetailMaps(std::vector<std::string> detailMapsFilenames) {
 			{
 				CImg<unsigned char> detailMap(detailMapFilename);
 				detailMap.resize(xDim, yDim);
-				detailMap.save("C:\\Users\\caroline\\Documents\\CIS_660_windows\\TerrainShaperNode\\Images\\detailMapLoadTest.bmp");
+				detailMap.save("C:\\Spring2019\\CIS660\\TerrainShaper\\Images\\detailMapLoadTest.bmp");
 				this->detailMaps.push_back(detailMap);
 			}
 			catch (...) 
@@ -360,9 +359,9 @@ void Graph::setStartPointsMap(std::string startPointsFilename)
 		try 
 		{
 			CImg<unsigned char> startPointsImage(startPointsFilenameChar);
-			startPointsImage.save("C:\\Users\\caroline\\Documents\\CIS_660_windows\\TerrainShaperNode\\Images\\startPointsLoadTestBEFORE.bmp");
+			startPointsImage.save("C:\\Spring2019\\CIS660\\TerrainShaper\\Images\\startPointsLoadTestBEFORE.bmp");
 			startPointsImage.resize(xDim, yDim);
-			startPointsImage.save("C:\\Users\\caroline\\Documents\\CIS_660_windows\\TerrainShaperNode\\Images\\startPointsLoadTestAFTER.bmp");
+			startPointsImage.save("C:\\Spring2019\\CIS660\\TerrainShaper\\Images\\startPointsLoadTestAFTER.bmp");
 
 			cimg_forXY(startPointsImage, x, y) 
 			{
@@ -390,6 +389,17 @@ void Graph::setNumStartPoints(int numStartPoints)
 void Graph::setSteepness(float steepness) 
 {
 	this->steepness = steepness;
+}
+
+void Graph::setWindDir(float x, float y)
+{
+	windDirX = x;
+	windDirY = y;
+}
+
+void Graph::setNoise(int noise)
+{
+	this->noise = noise;
 }
 
 void Graph::setAdditiveDetailMap(bool additive) {

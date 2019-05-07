@@ -58,9 +58,9 @@ MStatus uninitializePlugin(MObject obj)
 		return status;
 	}
 
-	//MGlobal::executeCommand(MString("deleteUI -m $menu;"));
-
-
+	MGlobal::executeCommand(MString("if(`menu -exists $tsMenu`) deleteUI -m $tsMenu;"));
+	MGlobal::executeCommand(MString("flushUndo;"));
+	
 	return status;
 }
 

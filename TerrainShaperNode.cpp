@@ -14,6 +14,9 @@ MObject TerrainShaperNode::startPointsMap;
 MObject TerrainShaperNode::numStartPoints;
 MObject TerrainShaperNode::maxHeight;
 MObject TerrainShaperNode::steepness;
+MObject TerrainShaperNode::noise;
+MObject TerrainShaperNode::windDirX;
+MObject TerrainShaperNode::windDirY;
 MObject TerrainShaperNode::additiveDetailMap;
 MTypeId TerrainShaperNode::id(0x80000);
 
@@ -30,6 +33,9 @@ MStatus TerrainShaperNode::initialize()
 	MFnNumericAttribute inNumStartPointsAttr;
 	MFnNumericAttribute inMaxHeightAttr;
 	MFnNumericAttribute inSteepnessAttr;
+	MFnNumericAttribute inNoiseAttr;
+	MFnNumericAttribute inWindDirXAttr;
+	MFnNumericAttribute inWindDirYAttr;
 	MFnNumericAttribute inAdditiveDetailMapAttr;
 
 	MStatus returnStatus;
@@ -61,6 +67,15 @@ MStatus TerrainShaperNode::initialize()
 	TerrainShaperNode::steepness = inSteepnessAttr.create("steepness", "s", MFnNumericData::kFloat, 0.5);
 	McheckErr(returnStatus, "ERROR creating TerrainShaperNode steepness attribute\n");
 
+	TerrainShaperNode::noise = inNoiseAttr.create("noise", "noise", MFnNumericData::kInt, 10);
+	McheckErr(returnStatus, "ERROR creating TerrainShaperNode noise attribute\n");
+
+	TerrainShaperNode::windDirX = inWindDirXAttr.create("windDirectionX", "wDirX", MFnNumericData::kFloat, 1);
+	McheckErr(returnStatus, "ERROR creating TerrainShaperNode wind direction x attribute\n");
+
+	TerrainShaperNode::windDirY = inWindDirYAttr.create("windDirectionY", "wDirY", MFnNumericData::kFloat, 0);
+	McheckErr(returnStatus, "ERROR creating TerrainShaperNode wind direction y attribute\n");
+
 	TerrainShaperNode::additiveDetailMap = inAdditiveDetailMapAttr.create("additiveDetailMap", "adm", MFnNumericData::kBoolean, 0);
 	McheckErr(returnStatus, "ERROR creating TerrainShaperNode additive detail map attribute\n");
 
@@ -83,6 +98,15 @@ MStatus TerrainShaperNode::initialize()
 	returnStatus = addAttribute(TerrainShaperNode::steepness);
 	McheckErr(returnStatus, "ERROR adding steepness attribute\n");
 
+	returnStatus = addAttribute(TerrainShaperNode::windDirX);
+	McheckErr(returnStatus, "ERROR adding wind direction x attribute\n");
+
+	returnStatus = addAttribute(TerrainShaperNode::windDirY);
+	McheckErr(returnStatus, "ERROR adding wind direction y attribute\n");
+
+	returnStatus = addAttribute(TerrainShaperNode::noise);
+	McheckErr(returnStatus, "ERROR adding noise attribute\n");
+
 	returnStatus = addAttribute(TerrainShaperNode::additiveDetailMap);
 	McheckErr(returnStatus, "ERROR adding additive detail map attribute\n");
 
@@ -104,6 +128,15 @@ MStatus TerrainShaperNode::initialize()
 
 	returnStatus = attributeAffects(TerrainShaperNode::steepness, TerrainShaperNode::outputGeom);
 	McheckErr(returnStatus, "ERROR in attributeAffects for steepness\n");
+
+	returnStatus = attributeAffects(TerrainShaperNode::windDirX, TerrainShaperNode::outputGeom);
+	McheckErr(returnStatus, "ERROR in attributeAffects for wind direction x\n");
+
+	returnStatus = attributeAffects(TerrainShaperNode::windDirY, TerrainShaperNode::outputGeom);
+	McheckErr(returnStatus, "ERROR in attributeAffects for wind direction y\n");
+
+	returnStatus = attributeAffects(TerrainShaperNode::noise, TerrainShaperNode::outputGeom);
+	McheckErr(returnStatus, "ERROR in attributeAffects for noise\n");
 
 	returnStatus = attributeAffects(TerrainShaperNode::additiveDetailMap, TerrainShaperNode::outputGeom);
 	McheckErr(returnStatus, "ERROR in attributeAffects for additive detail map\n");
@@ -158,6 +191,19 @@ MStatus TerrainShaperNode::deform(MDataBlock& data, MItGeometry& itGeo,
 	McheckErr(returnStatus, "ERROR getting steepness data handle\n");
 	float steepnessVal = steepnessData.asFloat();
 
+	// get wind direction
+	MDataHandle windDirXData = data.inputValue(windDirX, &returnStatus);
+	McheckErr(returnStatus, "ERROR getting wind direction x data handle\n");
+	float windDirXVal = windDirXData.asFloat();
+	MDataHandle windDirYData = data.inputValue(windDirY, &returnStatus);
+	McheckErr(returnStatus, "ERROR getting wind direction y data handle\n");
+	float windDirYVal = windDirYData.asFloat();
+
+	// get noise
+	MDataHandle noiseData = data.inputValue(noise, &returnStatus);
+	McheckErr(returnStatus, "ERROR getting steepness data handle\n");
+	int noiseVal = noiseData.asInt();
+
 	// get additive detail map
 	MDataHandle additiveDetailMapData = data.inputValue(additiveDetailMap, &returnStatus);
 	McheckErr(returnStatus, "ERROR getting additive detail map data handle\n");
@@ -169,12 +215,12 @@ MStatus TerrainShaperNode::deform(MDataBlock& data, MItGeometry& itGeo,
 	std::vector<std::string> detailMaps;
 	detailMaps.push_back(detailMapFilename.asChar());
 	Image heightMap = runAlgorithm(numSubdivisions, weightFunctionVal, steepnessVal, additiveDetailMapVal, 
-		detailMaps, startPointsMapFilename.asChar(), numStartPointsVal);
+		detailMaps, startPointsMapFilename.asChar(), numStartPointsVal, windDirXVal, windDirYVal, noiseVal);
 
 	// save height map as image
 	try {
 		std::string exePath = ExePath();
-		heightMap.save("C:\\Users\\caroline\\Documents\\CIS_660_windows\\TerrainShaperNode\\Images\\outHeightMap.bmp");
+		heightMap.save("C:\\Spring2019\\CIS660\\TerrainShaper\\Images\\outHeightMap.bmp");
 	}
 	catch (...)
 	{
@@ -213,7 +259,9 @@ MStatus TerrainShaperNode::deform(MDataBlock& data, MItGeometry& itGeo,
 }
 
 Image TerrainShaperNode::runAlgorithm(int numSubdivisions, short weightFunction, float steepness, bool additiveDetailMap,
-	std::vector<std::string> inDetailMapFilenames, std::string inStartPointsFilenames, int numStartPoints) 
+	std::vector<std::string> inDetailMapFilenames, std::string inStartPointsFilenames, int numStartPoints,
+	float windDirX, float windDirY,
+	int noise) 
 {
 	// run algorithm and display height map
 	Graph g = Graph(numSubdivisions, numSubdivisions);
@@ -221,6 +269,7 @@ Image TerrainShaperNode::runAlgorithm(int numSubdivisions, short weightFunction,
 	g.setStartPointsMap(inStartPointsFilenames);
 	g.setNumStartPoints(numStartPoints);
 	g.setSteepness(steepness);
+	g.setNoise(noise);
 	g.setAdditiveDetailMap(additiveDetailMap);
 	Image heightMap = g.run(weightFunction);
 
