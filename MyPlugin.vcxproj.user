@@ -4,7 +4,7 @@
     <DebuggerFlavor>WindowsRemoteDebugger</DebuggerFlavor>
     <LocalDebuggerCommand>$(targetDir)</LocalDebuggerCommand>
     <LocalDebuggerAttach>false</LocalDebuggerAttach>
-    <RemoteDebuggerCommand>C:\Program Files\Autodesk\Maya2018\bin\maya.exe</RemoteDebuggerCommand>
+    <RemoteDebuggerCommand>C:\Program Files\Autodesk\Maya2017\bin\maya.exe</RemoteDebuggerCommand>
     <RemoteDebuggerAttach>true</RemoteDebuggerAttach>
   </PropertyGroup>
 </Project>

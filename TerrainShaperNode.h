@@ -44,12 +44,11 @@ public:
 	static MObject noise;
 	static MObject windDirX;
 	static MObject windDirY;
-	static MObject additiveDetailMap;
+	static MObject windDir;
 
-	Image runAlgorithm(int numSubdivisions, short weightFunction, float steepness, bool additiveDetailMap,
+	Image runAlgorithm(int numSubdivisions, short weightFunction, float steepness,
 		std::vector<std::string> inDetailMapFilenames, std::string inStartPointsFilenames, int numStartPoints,
-		float windDirX, float windDirY,
-		int noise);
+		vec2 windDir, int noise);
 	
 
 };

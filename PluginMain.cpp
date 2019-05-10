@@ -34,15 +34,9 @@ MStatus initializePlugin(MObject obj)
 	}
 	MString nodeClassName("TerrainShaperNode");
 
-
 	// auto-register TerrainShaper menu command
 	MString menuCmd = "source \"" + plugin.loadPath() + "/TerrainShaperPluginWindow\";";
 	MGlobal::executeCommand(menuCmd, true);
-
-
-	MString global_proc = "source \"" + plugin.loadPath() + "/TextureDeformerTest\";";
-	MGlobal::executeCommand(global_proc, true);
-
 
 	return status;
 }

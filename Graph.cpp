@@ -84,7 +84,6 @@ float Graph::weightFunctionDunes(Node const * const currNode, Node const * const
 
 	float windWeight = weightFunctionNoise(currNode->coords.first, currNode->coords.second);
 
-	const vec2 windDir = vec2(windDirX, windDirY).Normalize(); // random vector on circle with length of 1
 	vec2 dist = vec2(currNode->coords.first - childNode->coords.first, 
 					 currNode->coords.second - childNode->coords.second);
 
@@ -102,11 +101,11 @@ float Graph::weightFunctionDunes(Node const * const currNode, Node const * const
 // weight function to create dunes
 float Graph::weightFunctionPeaks(Node const * const initalFeatureNode, Node const * const currNode, Node const * const childNode)
 {
-	const vec2 windDir = vec2(randRange(0, 10), randRange(0, 10)).Normalize(); // random vector on circle with length of 1
+	const vec2 windDirRand = vec2(randRange(0, 10), randRange(0, 10)).Normalize(); // random vector on circle with length of 1
 	vec2 dist = vec2(initalFeatureNode->coords.first - childNode->coords.first, 
 		initalFeatureNode->coords.second - childNode->coords.second).Normalize(); //get direction to current point.
 
-	float height = pow(0.25f * (1.1f + 0.5f * Dot(dist, windDir)), 0.75f) * max(currNode->height, 0.f);
+	float height = pow(0.25f * (1.1f + 0.5f * Dot(dist, windDirRand)), 0.75f) * max(currNode->height, 0.f);
 
 	return steepness * height;
 }
@@ -122,7 +121,7 @@ float Graph::weightFunctionCanyons(Node const * const initialFeatureNode, Node c
 	float phi = 0.9f;
 	while (t >= currNode->height) 
 	{
-		t *= phi; //actually, you can optimize that by using `log` function
+		t *= phi; 
 	}
 
 	float height = 0;
@@ -178,11 +177,6 @@ std::vector<std::vector<float>> Graph::shortestPath(short weightFunction, std::v
 		Node* n = new Node(*(nodes[startCoords[i].first][startCoords[i].second]));
 		// assign some height between maxHeight/2 and maxHeight
 		float height = randRange(maxHeight / 2.f, maxHeight);
-		if (additiveDetailMap && !detailMaps.empty()) {
-			// TODO
-			//height += getDetailMapValue(startCoords[i].first, startCoords[i].second);
-			//height *= (maxHeight / (maxHeight + 255.f)); // remap height back to [0, 1000]
-		}
 		n->height = height;
 		queue.push(n);
 
@@ -282,9 +276,7 @@ std::vector<std::vector<float>> Graph::shortestPath(short weightFunction, std::v
 }
 
 Image Graph::run(short weightFunction)
-{
-	//srand(time(NULL));
-	
+{	
 	std::vector<Point> startCoords;
 	if (!startPoints.empty()) 
 	{
@@ -338,12 +330,10 @@ void Graph::setDetailMaps(std::vector<std::string> detailMapsFilenames) {
 			{
 				CImg<unsigned char> detailMap(detailMapFilename);
 				detailMap.resize(xDim, yDim);
-				detailMap.save("C:\\Spring2019\\CIS660\\TerrainShaper\\Images\\detailMapLoadTest.bmp");
 				this->detailMaps.push_back(detailMap);
 			}
 			catch (...) 
 			{
-				// TODO
 			}
 
 		}
@@ -359,9 +349,7 @@ void Graph::setStartPointsMap(std::string startPointsFilename)
 		try 
 		{
 			CImg<unsigned char> startPointsImage(startPointsFilenameChar);
-			startPointsImage.save("C:\\Spring2019\\CIS660\\TerrainShaper\\Images\\startPointsLoadTestBEFORE.bmp");
 			startPointsImage.resize(xDim, yDim);
-			startPointsImage.save("C:\\Spring2019\\CIS660\\TerrainShaper\\Images\\startPointsLoadTestAFTER.bmp");
 
 			cimg_forXY(startPointsImage, x, y) 
 			{
@@ -376,7 +364,6 @@ void Graph::setStartPointsMap(std::string startPointsFilename)
 		}
 		catch (...) 
 		{
-			// TODO
 		}
 	}
 }
@@ -391,19 +378,13 @@ void Graph::setSteepness(float steepness)
 	this->steepness = steepness;
 }
 
-void Graph::setWindDir(float x, float y)
-{
-	windDirX = x;
-	windDirY = y;
+void Graph::setWindDir(vec2 windDir) {
+	this->windDir = windDir.Normalize();
 }
 
 void Graph::setNoise(int noise)
 {
 	this->noise = noise;
-}
-
-void Graph::setAdditiveDetailMap(bool additive) {
-	this->additiveDetailMap = additive;
 }
 
 

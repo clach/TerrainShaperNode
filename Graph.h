@@ -48,9 +48,8 @@ public:
 	void setStartPointsMap(std::string startPointsFilenames);
 	void setNumStartPoints(int numStartPoints);
 	void setSteepness(float steepness);
-	void setWindDir(float x, float y);
+	void setWindDir(vec2 windDir);
 	void setNoise(int noise);
-	void setAdditiveDetailMap(bool additive);
 
 protected:
 	std::vector<std::vector<float>> shortestPath(short weightFunction, std::vector<Point> startCoords);
@@ -79,8 +78,7 @@ protected:
 	float maxHeight;
 	float steepness;
 	int numStartPoints;
-	float windDirX, windDirY;
+	vec2 windDir;
 	int noise;
-	bool additiveDetailMap;
 
 };
